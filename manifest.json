@@ -1,0 +1,10 @@
+{
+  "id": "spellcheck",
+  "name": "Spell Check",
+  "version": "1.0.0",
+  "description": "Underlines misspelled words and flags a few common writing mistakes (repeated words, doubled spaces) while composing chat messages, posts, and comments. Fully local: the dictionary and rules below are the entire feature -- no text is ever sent anywhere.",
+  "enabledByDefault": false,
+  "rendererKind": "dynamic-wasm",
+  "wasmFile": "plugin.wasm",
+  "capabilities": ["spellcheck-data"]
+}
