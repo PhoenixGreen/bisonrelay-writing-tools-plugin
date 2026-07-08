@@ -29,8 +29,12 @@ Requires Go 1.24+ (for `go:wasmexport`) -- no TinyGo, no cgo.
 
 ## Installing in Bison Relay
 
-Settings > Plugins > Import Plugin, then select the generated zip. Enable/disable and
-remove it from the same screen.
+Grab `spellcheck-plugin-vX.Y.Z.zip` from the [Releases](../../releases) page (or build it
+yourself with `./package.sh`) -- import it as-is, no need to unzip it first.
+
+In Bison Relay: Settings > Plugins > Import Plugin, then select the zip. This plugin ships
+with `enabledByDefault: false`, so flip its switch on in the same list after importing.
+Disable/remove it from there too.
 
 ## Layout
 
