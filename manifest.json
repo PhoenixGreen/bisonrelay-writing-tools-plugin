@@ -1,10 +1,12 @@
 {
   "id": "spellcheck",
   "name": "Spell Check",
-  "version": "1.0.0",
-  "description": "Underlines misspelled words and flags a few common writing mistakes (repeated words, doubled spaces) while composing chat messages, posts, and comments. Fully local: the dictionary and rules below are the entire feature -- no text is ever sent anywhere.",
+  "version": "2.0.0",
+  "description": "Checks spelling and writing style while composing chat messages, posts and comments: a 121,000-word English dictionary with near-miss corrections, plus conservative grammar rules for repeated words, spacing, punctuation and commonly mistyped contractions. Fully local -- the dictionary and rules are the entire feature, and the plugin never sees a word you type.",
   "enabledByDefault": false,
   "rendererKind": "dynamic-wasm",
   "wasmFile": "plugin.wasm",
-  "capabilities": ["spellcheck-data"]
+  "capabilities": [
+    "spellcheck-data"
+  ]
 }
