@@ -7,7 +7,7 @@ that Bison Relay's own spellcheck UI applies to chat/post/comment text as you ty
 underline, native suggestion menu with corrections).
 
 This is a **headless** plugin: it contributes no nav item or screens, just the
-`spellcheck-data` capability. All matching/highlighting logic lives in Bison Relay itself
+`spellcheck-data` and `thesaurus` capabilities. All matching/highlighting logic lives in Bison Relay itself
 (Dart, using Flutter's native `SpellCheckConfiguration` API) -- this plugin only supplies the
 data, once, when enabled. It runs as sandboxed WebAssembly with no network or filesystem
 access at all; it doesn't need any, since the wordlist and rules are static data compiled
@@ -34,23 +34,48 @@ rules out most of what a word processor offers -- subject/verb agreement, their/
 its/it's -- none of which a regex can decide without guessing. A filler-word rule was
 written and then removed when its own test caught it firing on "he said quite clearly".
 
-## Regenerating the wordlist
+**Synonyms.** 62,959 words, condensed from the MyThes/WordNet thesaurus. Senses are kept
+apart -- "bank" as a place to keep money is listed separately from its river sense --
+because pooling them is what makes a thesaurus give confidently wrong advice. Antonyms are
+included and marked.
+
+Unlike the two datasets above, this one is never handed to the app: at 3.5MB it is far too
+much to push across for a feature used a word at a time, so the plugin keeps it and answers
+lookups. It is not fully parsed either -- the generated file is sorted, so a lookup binary-
+searches line offsets and parses only the line it lands on, keeping the resident cost inside
+the wasm instance to a few hundred KB rather than tens of megabytes.
+
+Synonym ranking follows how safely a word substitutes. MyThes marks its cross-references,
+and they do not all mean the same thing: `(generic term)` is a hypernym and never a
+replacement (offering "city" for "Hague" changes what the sentence says), while
+`(similar term)` and `(related term)` usually are -- and for many adjectives are the *only*
+ones, since the direct synonym list is empty. A first version dropped all three and left
+"happy" with felicitous, glad and well-chosen while discarding cheerful, contented and
+blissful.
+
+## Regenerating the data
 
 `words.txt` is committed, so building needs neither the tool nor `data/`; both are kept so
 the list is reproducible and auditable rather than an opaque blob.
 
 ```sh
 go run ./tools/mkwords > words.txt
+go run ./tools/mkthesaurus > thesaurus.txt
 ```
 
-## Dictionary licence and attribution
+## Data licences and attribution
 
-The dictionary is derived from [SCOWL](http://wordlist.sourceforge.net), Copyright
+The **dictionary** is derived from [SCOWL](http://wordlist.sourceforge.net), Copyright
 2000-2018 Kevin Atkinson, with the affix file derived from Geoff Kuenning's Ispell under
-his BSD licence. Both permit use, modification and redistribution provided the copyright
-and permission notices travel with them; the full text is in **`data/LICENSE-SCOWL`**,
-which ships in this repository and must stay with any redistribution of `words.txt` or a
-`plugin.wasm` built from it.
+his BSD licence. Full text: **`data/LICENSE-SCOWL`**.
+
+The **thesaurus** is the MyThes `th_en_US_v2` data shipped with LibreOffice, derived from
+[WordNet](https://wordnet.princeton.edu), WordNet 2.1 Copyright 2005 Princeton University.
+Full text: **`data/LICENSE-WORDNET`**.
+
+Both permit use, modification and redistribution provided the copyright and permission
+notices travel with them. Those notices ship in this repository and must stay with any
+redistribution of `words.txt`, `thesaurus.txt`, or a `plugin.wasm` built from them.
 
 ## Building
 
@@ -85,7 +110,10 @@ Disable/remove it from there too.
   as ordinary Go so they can be tested without building for wasm. Nothing here matches
   anything; the rules are regex *source*, executed by Dart in the app, whose engine
   (unlike Go's RE2) supports the backreferences a rule like "repeated word" needs.
-- `words.txt` -- the generated wordlist, embedded via `//go:embed`.
+- `thesaurus/` -- the synonym lookup: a binary search over the generated file's line
+  offsets, parsing one entry at a time.
+- `words.txt`, `thesaurus.txt` -- the generated datasets, embedded via `//go:embed`.
 - `data/` -- the sources `words.txt` is generated from: the hunspell `.dic`/`.aff` pair,
   the supplemental vocabulary, and the dictionary licence.
 - `tools/mkwords/` -- the affix expander that turns `data/` into `words.txt`.
+- `tools/mkthesaurus/` -- condenses the MyThes source into `thesaurus.txt`.

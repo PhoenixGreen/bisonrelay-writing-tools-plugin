@@ -1,12 +1,13 @@
 {
   "id": "spellcheck",
-  "name": "Spell Check",
-  "version": "2.0.0",
-  "description": "Checks spelling and writing style while composing chat messages, posts and comments: a 121,000-word English dictionary with near-miss corrections, plus conservative grammar rules for repeated words, spacing, punctuation and commonly mistyped contractions. Fully local -- the dictionary and rules are the entire feature, and the plugin never sees a word you type.",
+  "name": "Writing Tools",
+  "version": "2.1.0",
+  "description": "Spelling, writing-style and thesaurus support while composing chat messages, posts and comments: a 121,000-word English dictionary with near-miss corrections, 30 conservative grammar rules, and synonyms for 63,000 words. Fully local -- all three datasets ship inside the plugin, and it never sees a word you type.",
   "enabledByDefault": false,
   "rendererKind": "dynamic-wasm",
   "wasmFile": "plugin.wasm",
   "capabilities": [
-    "spellcheck-data"
+    "spellcheck-data",
+    "thesaurus"
   ]
 }
