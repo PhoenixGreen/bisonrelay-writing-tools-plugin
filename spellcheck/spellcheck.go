@@ -196,6 +196,20 @@ var Rules = []GrammarRule{
 		Suggest: "let's $1",
 	},
 
+	{
+		// $U2 upper-cases the captured letter; a literal template cannot,
+		// since the letter to capitalise is whatever was typed.
+		//
+		// This one is the noisiest rule here by some way: plenty of people
+		// write chat entirely in lower case on purpose, and it flags the
+		// first word of every sentence they send. It is included because a
+		// missing capital is a real error and the fix is unambiguous, but it
+		// is the first rule to drop if the underlines become wallpaper.
+		Pattern: `(^|[.!?]\s+)([a-z])`,
+		Message: "Sentence should start with a capital",
+		Suggest: "$1$U2",
+	},
+
 	// --- confusions with a decidable answer ---
 	// their/there/they're normally needs to know what a sentence means, which
 	// is why the general case is absent. These are the positions where it
@@ -227,9 +241,13 @@ var Rules = []GrammarRule{
 	// Suggest is empty because there is no single correct rewrite; the
 	// point is to draw the eye, not to make the edit.
 	{
-		Pattern: `[!?]{3,}`,
+		// Captured and back-referenced so the fix keeps whichever mark was
+		// used: "!!!" collapses to "!", "???" to "?". A run of mixed marks
+		// deliberately does not match -- there is no single right answer for
+		// "!?!".
+		Pattern: `([!?])\1{2,}`,
 		Message: "Excessive punctuation",
-		Suggest: "",
+		Suggest: "$1",
 	},
 	// A "filler word" rule (very, really, quite, actually...) was tried here
 	// and removed: it fired on "he said quite clearly", which is correct

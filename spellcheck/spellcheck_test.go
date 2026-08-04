@@ -98,6 +98,7 @@ var correctText = []string{
 	"What's the plan for the release? I'd like to help.",
 	"We should have tested it first; now we know.",
 	"I'm going to the shop, and then I'll head home.",
+	"Fine. Next question, then.",
 	// their/there used correctly, which the new confusion rules must not
 	// touch: a possessive before a noun, and an existential before a verb.
 	"Their wallet is empty, so there is nothing to send.",
@@ -128,7 +129,9 @@ func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 			}
 		}
 	}
-	if skipped > 2 {
+	// Repeated word, repeated punctuation and excessive punctuation all use
+	// backreferences, which RE2 cannot compile by design.
+	if skipped > 3 {
 		t.Errorf("%d rules could not be compiled by RE2; expected only the "+
 			"backreference ones", skipped)
 	}
@@ -143,7 +146,6 @@ func TestRulesCatchTheirOwnMistake(t *testing.T) {
 		"Multiple spaces":                 "hello  world",
 		"Space before punctuation":        "hello , world",
 		"Missing space after punctuation": "Stop.Now",
-		"Excessive punctuation":           "really!!!",
 		"Space inside bracket":            "( hello)",
 		"\"a lot\" is two words":          "thanks alot",
 		"Missing apostrophe":              "i cant do it",
