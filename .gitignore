@@ -1,2 +1,7 @@
 plugin.wasm
 spellcheck-plugin-v*.zip
+
+# The datasets are embedded compressed; only the .gz files are committed.
+# Regenerate with tools/mkwords and tools/mkthesaurus, then run build.sh.
+words.txt
+thesaurus.txt

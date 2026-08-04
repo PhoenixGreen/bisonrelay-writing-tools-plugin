@@ -22,19 +22,47 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	_ "embed"
 	"encoding/json"
+	"io"
+
 	"unsafe"
 
 	"github.com/PhoenixGreen/bisonrelay-spellcheck-plugin/spellcheck"
 	"github.com/PhoenixGreen/bisonrelay-spellcheck-plugin/thesaurus"
 )
 
-//go:embed words.txt
-var wordsTXT string
+// The two datasets are embedded compressed. Together they are 4.6MB of text,
+// which is most of the built module; gzipped they are 1.5MB, and the module
+// drops from 7.6MB to well under half that.
+//
+// This costs nothing at runtime that was not already being paid: //go:embed
+// puts the data in the module's linear memory either way, so the only
+// difference is one decompression the first time each is used.
+//
+//go:embed words.txt.gz
+var wordsGZ []byte
 
-//go:embed thesaurus.txt
-var thesaurusTXT string
+//go:embed thesaurus.txt.gz
+var thesaurusGZ []byte
+
+// gunzip decompresses an embedded dataset. A failure here means the module
+// was built wrong rather than that anything went wrong at runtime, so the
+// caller degrades to having no data rather than trying to recover.
+func gunzip(b []byte) string {
+	r, err := gzip.NewReader(bytes.NewReader(b))
+	if err != nil {
+		return ""
+	}
+	defer r.Close()
+	out, err := io.ReadAll(r)
+	if err != nil {
+		return ""
+	}
+	return string(out)
+}
 
 // thesaurusIndex is built on first use rather than at startup: a plugin
 // whose thesaurus is never consulted should not pay to scan 3.5MB, and the
@@ -43,7 +71,7 @@ var thesaurusIndex *thesaurus.Index
 
 func lookupIndex() *thesaurus.Index {
 	if thesaurusIndex == nil {
-		thesaurusIndex = thesaurus.NewIndex(thesaurusTXT)
+		thesaurusIndex = thesaurus.NewIndex(gunzip(thesaurusGZ))
 	}
 	return thesaurusIndex
 }
@@ -80,7 +108,7 @@ func writeResult(data []byte) uint64 {
 //go:wasmexport get_spellcheck_data
 func getSpellcheckData() uint64 {
 	b, err := json.Marshal(spellcheck.Data{
-		Words:        spellcheck.ParseWords(wordsTXT),
+		Words:        spellcheck.ParseWords(gunzip(wordsGZ)),
 		GrammarRules: spellcheck.Rules,
 	})
 	if err != nil {

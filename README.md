@@ -61,6 +61,15 @@ the list is reproducible and auditable rather than an opaque blob.
 ```sh
 go run ./tools/mkwords > words.txt
 go run ./tools/mkthesaurus > thesaurus.txt
+./build.sh          # recompresses whichever changed, then compiles
+```
+
+Only the compressed `.gz` files are committed -- they are what `main.go` embeds, and
+keeping the plain text alongside them would be the same data twice, free to drift. To read
+one:
+
+```sh
+gunzip -c words.txt.gz | grep '^decred$'
 ```
 
 ## Data licences and attribution
@@ -112,7 +121,11 @@ Disable/remove it from there too.
   (unlike Go's RE2) supports the backreferences a rule like "repeated word" needs.
 - `thesaurus/` -- the synonym lookup: a binary search over the generated file's line
   offsets, parsing one entry at a time.
-- `words.txt`, `thesaurus.txt` -- the generated datasets, embedded via `//go:embed`.
+- `words.txt.gz`, `thesaurus.txt.gz` -- the generated datasets, embedded compressed via
+  `//go:embed` and decompressed on first use. Together they are 4.6MB of text and 1.5MB
+  compressed, which is the difference between a 7.6MB module and a 4.7MB one. It costs
+  nothing at runtime that was not already paid: `//go:embed` puts the data in linear memory
+  either way.
 - `data/` -- the sources `words.txt` is generated from: the hunspell `.dic`/`.aff` pair,
   the supplemental vocabulary, and the dictionary licence.
 - `tools/mkwords/` -- the affix expander that turns `data/` into `words.txt`.
