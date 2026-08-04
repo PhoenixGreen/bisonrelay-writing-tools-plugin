@@ -98,6 +98,12 @@ var correctText = []string{
 	"What's the plan for the release? I'd like to help.",
 	"We should have tested it first; now we know.",
 	"I'm going to the shop, and then I'll head home.",
+	// their/there used correctly, which the new confusion rules must not
+	// touch: a possessive before a noun, and an existential before a verb.
+	"Their wallet is empty, so there is nothing to send.",
+	"There are two of them, and their channels are both open.",
+	"They brought their own hardware to the meetup.",
+	"I told them there would be a delay.",
 }
 
 // TestRulesDoNotFireOnCorrectText is the false-positive guard. A wavy
@@ -142,6 +148,10 @@ func TestRulesCatchTheirOwnMistake(t *testing.T) {
 		"\"a lot\" is two words":          "thanks alot",
 		"Missing apostrophe":              "i cant do it",
 		"Wordy":                           "due to the fact that it rained",
+		// Keyed by the rule's message template, not the expanded text: a
+		// message may reference the pattern's capture groups.
+		"Should be \"there $1\"": "their is a problem",
+		"Should be \"their $1\"": "they brought there own",
 	}
 	for message, text := range cases {
 		var fired bool

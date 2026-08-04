@@ -29,7 +29,15 @@ type GrammarRule struct {
 
 // Data is the whole payload the capability returns.
 type Data struct {
-	Words        []string      `json:"words"`
+	Words []string `json:"words"`
+
+	// CommonWords is a subset of Words ordered most-common-first, used by the
+	// app to rank corrections. Edit distance cannot rank on its own: "teh" is
+	// one typo from "the", "tech", "meh" and "te" alike, and without knowing
+	// which of those people write, the intended word is as likely to be
+	// missing from the handful shown as not.
+	CommonWords []string `json:"commonWords,omitempty"`
+
 	GrammarRules []GrammarRule `json:"grammarRules"`
 }
 
@@ -186,6 +194,33 @@ var Rules = []GrammarRule{
 		Pattern: `\blets\s+(go|see|say|try|talk|do|get|make)\b`,
 		Message: "Missing apostrophe",
 		Suggest: "let's $1",
+	},
+
+	// --- confusions with a decidable answer ---
+	// their/there/they're normally needs to know what a sentence means, which
+	// is why the general case is absent. These are the positions where it
+	// does not: "their" is a possessive, so a pronoun or a verb cannot follow
+	// it, whatever the sentence is about.
+	{
+		Pattern: `\btheir\s+(is|are|was|were|will|would|has|have|had)\b`,
+		Message: "Should be \"there $1\"",
+		Suggest: "there $1",
+	},
+	{
+		Pattern: `\btheir\s+(he|she|it|we|they|you)\b`,
+		Message: "Should be \"there $1\"",
+		Suggest: "there $1",
+	},
+	{
+		// "there own" is never right: only the possessive can precede it.
+		Pattern: `\bthere\s+(own|self|selves)\b`,
+		Message: "Should be \"their $1\"",
+		Suggest: "their $1",
+	},
+	{
+		Pattern: `\bthere\s+(is|are|was|were)\s+own\b`,
+		Message: "Should be \"their own\"",
+		Suggest: "their own",
 	},
 
 	// --- style: flagged, but with no replacement proposed ---

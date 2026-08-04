@@ -45,6 +45,9 @@ import (
 //go:embed words.txt.gz
 var wordsGZ []byte
 
+//go:embed common.txt.gz
+var commonGZ []byte
+
 //go:embed thesaurus.txt.gz
 var thesaurusGZ []byte
 
@@ -109,6 +112,7 @@ func writeResult(data []byte) uint64 {
 func getSpellcheckData() uint64 {
 	b, err := json.Marshal(spellcheck.Data{
 		Words:        spellcheck.ParseWords(gunzip(wordsGZ)),
+		CommonWords:  spellcheck.ParseWords(gunzip(commonGZ)),
 		GrammarRules: spellcheck.Rules,
 	})
 	if err != nil {
