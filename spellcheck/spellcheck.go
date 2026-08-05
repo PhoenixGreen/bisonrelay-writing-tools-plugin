@@ -223,8 +223,13 @@ var Rules = []GrammarRule{
 	},
 
 	{
+		// The whole word is matched, not just its first letter, so the fix
+		// reads as the word it produces: right-clicking "in" at the start of
+		// a sentence offers "In", where offering the bare "I" looked like a
+		// suggestion to replace the word with the pronoun.
+		//
 		// The preceding punctuation is matched in a lookbehind rather than a
-		// capture, so the flagged span is the letter alone. Written as a
+		// capture, so the flagged span starts at the word. Written as a
 		// capture, the span began at the previous sentence's full stop, which
 		// underlined text that was not wrong and -- because a right-click
 		// selects the word under the pointer -- meant clicking the offending
@@ -245,9 +250,9 @@ var Rules = []GrammarRule{
 		// of every sentence they send. It is included because a missing
 		// capital is a real error and the fix is unambiguous, but it is the
 		// first rule to drop if the underlines become wallpaper.
-		Pattern: `(?<=^|[.!?]\s|\n)([a-z])`,
+		Pattern: `(?<=^|[.!?]\s|\n)([a-z])(\w*)`,
 		Message: "Sentence should start with a capital",
-		Suggest: "$U1",
+		Suggest: "$U1$2",
 	},
 
 	// --- confusions with a decidable answer ---
