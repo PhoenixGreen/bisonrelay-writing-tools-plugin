@@ -231,6 +231,12 @@ var Rules = []GrammarRule{
 		// letter often missed the span entirely while clicking the full stop
 		// beside it worked.
 		//
+		// A newline counts as a sentence break in its own right, not only
+		// one preceded by a full stop. A new paragraph is the commonest
+		// place for a missing capital and the lookbehind, which sees exactly
+		// the characters immediately before the letter, saw only the second
+		// of the two newlines between paragraphs and so never fired there.
+		//
 		// $U1 upper-cases the captured letter; a literal template cannot,
 		// since the letter to capitalise is whatever was typed.
 		//
@@ -239,7 +245,7 @@ var Rules = []GrammarRule{
 		// of every sentence they send. It is included because a missing
 		// capital is a real error and the fix is unambiguous, but it is the
 		// first rule to drop if the underlines become wallpaper.
-		Pattern: `(?<=^|[.!?]\s)([a-z])`,
+		Pattern: `(?<=^|[.!?]\s|\n)([a-z])`,
 		Message: "Sentence should start with a capital",
 		Suggest: "$U1",
 	},

@@ -1,7 +1,7 @@
 {
   "id": "spellcheck",
   "name": "Writing Tools",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Spelling, writing-style and thesaurus support while composing chat messages, posts and comments: a 121,000-word English dictionary with frequency-ranked corrections, 36 conservative grammar rules, and synonyms for 63,000 words. Fully local -- all datasets ship inside the plugin, and it never sees a word you type.",
   "enabledByDefault": false,
   "rendererKind": "dynamic-wasm",
