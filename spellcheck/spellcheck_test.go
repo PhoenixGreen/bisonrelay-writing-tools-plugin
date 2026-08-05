@@ -100,6 +100,10 @@ var correctText = []string{
 	"I'm going to the shop, and then I'll head home.",
 	"Fine. Next question, then.",
 	"see docs.rs and news.ycombinator.com for details",
+	// its/it's used correctly, which the new rules must not touch.
+	"The channel lost its funding, and it's closed now.",
+	"Its balance is low, but its owner has more.",
+	"It's going to take a while.",
 	"e.g. this one, i.e. that one",
 	// their/there used correctly, which the new confusion rules must not
 	// touch: a possessive before a noun, and an existential before a verb.
@@ -158,6 +162,8 @@ func TestRulesCatchTheirOwnMistake(t *testing.T) {
 		// message may reference the pattern's capture groups.
 		"Should be \"there $1\"": "their is a problem",
 		"Should be \"their $1\"": "they brought there own",
+		"Should be \"it's $1\"":  "its going to rain",
+		"Should be \"its $1\"":   "it's own fault",
 	}
 	for message, text := range cases {
 		var fired bool

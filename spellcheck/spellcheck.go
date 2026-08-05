@@ -228,6 +228,10 @@ var Rules = []GrammarRule{
 		// a sentence offers "In", where offering the bare "I" looked like a
 		// suggestion to replace the word with the pronoun.
 		//
+		// The tail keeps apostrophes, so "that's" is flagged and corrected
+		// whole. Matching only word characters stopped at the apostrophe and
+		// offered "That" for it, which reads as a proposal to drop the "'s".
+		//
 		// The preceding punctuation is matched in a lookbehind rather than a
 		// capture, so the flagged span starts at the word. Written as a
 		// capture, the span began at the previous sentence's full stop, which
@@ -250,7 +254,7 @@ var Rules = []GrammarRule{
 		// of every sentence they send. It is included because a missing
 		// capital is a real error and the fix is unambiguous, but it is the
 		// first rule to drop if the underlines become wallpaper.
-		Pattern: `(?<=^|[.!?]\s|\n)([a-z])(\w*)`,
+		Pattern: `(?<=^|[.!?]\s|\n)([a-z])([a-z0-9']*)`,
 		Message: "Sentence should start with a capital",
 		Suggest: "$U1$2",
 	},
@@ -269,6 +273,26 @@ var Rules = []GrammarRule{
 		Pattern: `\btheir\s+(he|she|it|we|they|you)\b`,
 		Message: "Should be \"there $1\"",
 		Suggest: "there $1",
+	},
+	{
+		// its/it's needs to know what the sentence means, which is why the
+		// general case is absent -- both are real words and either can
+		// follow almost anything. These are the positions where it is
+		// decidable: "its" is a possessive, so a verb cannot follow it.
+		Pattern: `\bits\s+(a|an|the|not|been|going|getting|coming|becoming|always|never|just|only|still|already)\b`,
+		Message: "Should be \"it's $1\"",
+		Suggest: "it's $1",
+	},
+	// A rule for "its" before any -ing word was tried here and removed: it
+	// fired on "its funding", and English is full of -ing nouns -- funding,
+	// meaning, building, training -- that a possessive precedes perfectly
+	// well. Only the listed words above are safe, because each is a word no
+	// possessive can be followed by whatever the sentence.
+	{
+		// The mirror: "it's" is "it is", which cannot precede a noun it owns.
+		Pattern: `\bit's\s+(own|owner)\b`,
+		Message: "Should be \"its $1\"",
+		Suggest: "its $1",
 	},
 	{
 		// "there own" is never right: only the possessive can precede it.
