@@ -279,9 +279,30 @@ var Rules = []GrammarRule{
 		// general case is absent -- both are real words and either can
 		// follow almost anything. These are the positions where it is
 		// decidable: "its" is a possessive, so a verb cannot follow it.
-		Pattern: `\bits\s+(a|an|the|not|been|going|getting|coming|becoming|always|never|just|only|still|already)\b`,
-		Message: "Should be \"it's $1\"",
-		Suggest: "it's $1",
+		// The leading letter is captured rather than written literally, so
+		// the rule fires on "Its" at the start of a sentence -- which is
+		// where it most often goes wrong -- and puts the case back.
+		//
+		// The list is words no possessive can be followed by, whatever the
+		// sentence: articles, adverbs, other possessives, and adjectives.
+		// Verbs are the tempting addition and mostly unsafe -- see the note
+		// below on -ing nouns -- so only weather verbs, which cannot follow
+		// a possessive at all, are here.
+		// The list is words a possessive genuinely cannot precede -- and it
+		// is much shorter than it first appears. Adjectives were tried and
+		// removed when the corpus caught "Its true value", "Its cold
+		// storage" and "Its best feature": almost any adjective reads fine
+		// after a possessive, as does almost any verb used as a noun ("its
+		// going rate", "its freezing point").
+		//
+		// What is left cannot be misread. A determiner never follows a
+		// possessive, nor does another possessive; "raining" and "snowing"
+		// are not nouns at all; and "going to" as a phrase is unambiguous
+		// where the bare "going" is not.
+		Pattern: `\b([Ii])ts\s+(a|an|the|not|been|my|your|our|his|her|their|` +
+			`raining|snowing|too|going\s+to)\b`,
+		Message: "Should be \"$1t's $2\"",
+		Suggest: "$1t's $2",
 	},
 	// A rule for "its" before any -ing word was tried here and removed: it
 	// fired on "its funding", and English is full of -ing nouns -- funding,
@@ -290,9 +311,9 @@ var Rules = []GrammarRule{
 	// possessive can be followed by whatever the sentence.
 	{
 		// The mirror: "it's" is "it is", which cannot precede a noun it owns.
-		Pattern: `\bit's\s+(own|owner)\b`,
-		Message: "Should be \"its $1\"",
-		Suggest: "its $1",
+		Pattern: `\b([Ii])t's\s+(own|owner)\b`,
+		Message: "Should be \"$1ts $2\"",
+		Suggest: "$1ts $2",
 	},
 	{
 		// "there own" is never right: only the possessive can precede it.

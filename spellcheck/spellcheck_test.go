@@ -104,6 +104,16 @@ var correctText = []string{
 	"The channel lost its funding, and it's closed now.",
 	"Its balance is low, but its owner has more.",
 	"It's going to take a while.",
+	// Possessives before nouns that look like the words above: each of these
+	// is correct and an over-eager rule would flag it.
+	"Its true value is hard to judge.",
+	"Its cold storage keeps the keys offline.",
+	"Its early adopters were patient.",
+	"Its best feature is the relay.",
+	"Its interesting parts are undocumented.",
+	"Its going rate is higher than that.",
+	"Its freezing point is well below zero.",
+	"Its only purpose is to relay messages.",
 	"e.g. this one, i.e. that one",
 	// their/there used correctly, which the new confusion rules must not
 	// touch: a possessive before a noun, and an existential before a verb.
@@ -162,8 +172,8 @@ func TestRulesCatchTheirOwnMistake(t *testing.T) {
 		// message may reference the pattern's capture groups.
 		"Should be \"there $1\"": "their is a problem",
 		"Should be \"their $1\"": "they brought there own",
-		"Should be \"it's $1\"":  "its going to rain",
-		"Should be \"its $1\"":   "it's own fault",
+		"Should be \"$1t's $2\"": "its going to rain",
+		"Should be \"$1ts $2\"":  "it's own fault",
 	}
 	for message, text := range cases {
 		var fired bool
