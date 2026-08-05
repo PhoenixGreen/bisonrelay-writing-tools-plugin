@@ -197,17 +197,25 @@ var Rules = []GrammarRule{
 	},
 
 	{
-		// $U2 upper-cases the captured letter; a literal template cannot,
+		// The preceding punctuation is matched in a lookbehind rather than a
+		// capture, so the flagged span is the letter alone. Written as a
+		// capture, the span began at the previous sentence's full stop, which
+		// underlined text that was not wrong and -- because a right-click
+		// selects the word under the pointer -- meant clicking the offending
+		// letter often missed the span entirely while clicking the full stop
+		// beside it worked.
+		//
+		// $U1 upper-cases the captured letter; a literal template cannot,
 		// since the letter to capitalise is whatever was typed.
 		//
-		// This one is the noisiest rule here by some way: plenty of people
-		// write chat entirely in lower case on purpose, and it flags the
-		// first word of every sentence they send. It is included because a
-		// missing capital is a real error and the fix is unambiguous, but it
-		// is the first rule to drop if the underlines become wallpaper.
-		Pattern: `(^|[.!?]\s+)([a-z])`,
+		// This is the noisiest rule here by some way: plenty of people write
+		// chat entirely in lower case on purpose, and it flags the first word
+		// of every sentence they send. It is included because a missing
+		// capital is a real error and the fix is unambiguous, but it is the
+		// first rule to drop if the underlines become wallpaper.
+		Pattern: `(?<=^|[.!?]\s)([a-z])`,
 		Message: "Sentence should start with a capital",
-		Suggest: "$1$U2",
+		Suggest: "$U1",
 	},
 
 	// --- confusions with a decidable answer ---

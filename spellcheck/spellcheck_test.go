@@ -129,9 +129,10 @@ func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 			}
 		}
 	}
-	// Repeated word, repeated punctuation and excessive punctuation all use
-	// backreferences, which RE2 cannot compile by design.
-	if skipped > 3 {
+	// Repeated word, repeated punctuation and excessive punctuation use
+	// backreferences, and the sentence-capital rule a lookbehind; RE2 supports
+	// neither, by design.
+	if skipped > 4 {
 		t.Errorf("%d rules could not be compiled by RE2; expected only the "+
 			"backreference ones", skipped)
 	}
