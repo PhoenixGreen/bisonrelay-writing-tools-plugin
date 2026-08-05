@@ -99,6 +99,8 @@ var correctText = []string{
 	"We should have tested it first; now we know.",
 	"I'm going to the shop, and then I'll head home.",
 	"Fine. Next question, then.",
+	"see docs.rs and news.ycombinator.com for details",
+	"e.g. this one, i.e. that one",
 	// their/there used correctly, which the new confusion rules must not
 	// touch: a possessive before a noun, and an existential before a verb.
 	"Their wallet is empty, so there is nothing to send.",
@@ -129,12 +131,14 @@ func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 			}
 		}
 	}
-	// Repeated word, repeated punctuation and excessive punctuation use
-	// backreferences, and the sentence-capital rule a lookbehind; RE2 supports
-	// neither, by design.
-	if skipped > 4 {
+	// Six rules are beyond RE2 by design: three use backreferences (repeated
+	// word, repeated punctuation, excessive punctuation) and three use
+	// lookarounds (sentence capital, missing space, the "I" pronoun). They
+	// are written in Dart's dialect and are covered by the app's tests, where
+	// they actually run.
+	if skipped > 6 {
 		t.Errorf("%d rules could not be compiled by RE2; expected only the "+
-			"backreference ones", skipped)
+			"backreference and lookaround ones", skipped)
 	}
 }
 
@@ -144,13 +148,12 @@ func TestRulesCatchTheirOwnMistake(t *testing.T) {
 	// Only rules RE2 can compile appear here; "Repeated word" and "Repeated
 	// punctuation" use backreferences and are exercised app-side instead.
 	cases := map[string]string{
-		"Multiple spaces":                 "hello  world",
-		"Space before punctuation":        "hello , world",
-		"Missing space after punctuation": "Stop.Now",
-		"Space inside bracket":            "( hello)",
-		"\"a lot\" is two words":          "thanks alot",
-		"Missing apostrophe":              "i cant do it",
-		"Wordy":                           "due to the fact that it rained",
+		"Multiple spaces":          "hello  world",
+		"Space before punctuation": "hello , world",
+		"Space inside bracket":     "( hello)",
+		"\"a lot\" is two words":   "thanks alot",
+		"Missing apostrophe":       "i cant do it",
+		"Wordy":                    "due to the fact that it rained",
 		// Keyed by the rule's message template, not the expanded text: a
 		// message may reference the pattern's capture groups.
 		"Should be \"there $1\"": "their is a problem",

@@ -41,6 +41,13 @@ type Data struct {
 	GrammarRules []GrammarRule `json:"grammarRules"`
 }
 
+// domainTLDs are the endings that mark a dot as part of a web address rather
+// than the end of a sentence. Not exhaustive, and cannot be: it is a
+// heuristic standing in for "is this a hostname", which no regex can decide.
+const domainTLDs = "com|org|net|edu|gov|mil|int|io|dev|app|xyz|info|biz|tv|" +
+	"ai|gg|rs|sh|ly|cc|onion|uk|de|fr|ru|au|ca|us|jp|cn|nz|za|eu|ch|nl|se|" +
+	"tech|site|online|store|blog|news|wiki|link|page|pro|me|co|gl|fm"
+
 // Rules are the writing checks, in the order they are applied.
 //
 // Every rule here is deliberately conservative, because a false positive
@@ -76,11 +83,26 @@ var Rules = []GrammarRule{
 		Suggest: "$1",
 	},
 	{
-		// Only fires mid-word-boundary between a sentence end and a capital,
-		// so "example.com" and "3.5" are untouched.
-		Pattern: `([.!?])([A-Z])`,
+		// Fires whatever the case of the next letter, and fixes both faults
+		// at once: "(if you are free).what's" becomes ". What's". Restricted
+		// to a capital, this missed exactly that -- a run-together sentence
+		// whose next word was also left lower case fell between this rule and
+		// the capitalisation one, since each assumed the other's condition.
+		//
+		// Two guards keep it off text that is not a sentence boundary. The
+		// lookbehind wants two word characters or a closing bracket before
+		// the stop, which excludes initialisms ("e.g.", "U.S.A."). The
+		// lookahead excludes a domain, either directly ("example.com") or
+		// through further labels ("news.ycombinator.com").
+		//
+		// The domain list deliberately omits ccTLDs that are ordinary English
+		// words -- it, is, at, in, so, be, no -- because a sentence starts
+		// with one of those far more often than a chat mentions example.it,
+		// and a missed flag costs less than a wrong one.
+		Pattern: `(?<=\w\w|[)\]"'])([.!?])(?!(?:` + domainTLDs +
+			`)\b|[\w-]*\.(?:` + domainTLDs + `)\b)([A-Za-z])`,
 		Message: "Missing space after punctuation",
-		Suggest: "$1 $2",
+		Suggest: "$1 $U2",
 	},
 	{
 		Pattern: `([,;:])([A-Za-z])`,
@@ -102,7 +124,11 @@ var Rules = []GrammarRule{
 	{
 		// The pronoun is the only single letter that is always capitalised,
 		// which is what makes this safe to correct outright.
-		Pattern: `\bi\b`,
+		//
+		// A dot on either side means an initialism -- "i.e." -- and not the
+		// pronoun at all. That costs the rule a genuine "i" ending a
+		// sentence, which is a sentence hardly anyone writes.
+		Pattern: `(?<!\.)\bi\b(?!\.)`,
 		Message: "\"I\" is capitalised",
 		Suggest: "I",
 	},
