@@ -148,13 +148,40 @@ ones, since the direct synonym list is empty. A first version dropped all three 
 "happy" with felicitous, glad and well-chosen while discarding cheerful, contented and
 blissful.
 
+## Languages
+
+Two: **English (UK)** and **English (US)**, chosen in Settings > Plugins. A language
+is a different word list rather than a filter over one -- "colour" is in the British list
+and "color" in the American, and each is a misspelling in the other -- so switching goes
+back to the plugin for a fresh dictionary.
+
+The lists come from [SCOWL](http://wordlist.sourceforge.net), which publishes plain lists
+of surface forms split by how common each word is and by which English uses it. Everyone
+gets `english-`, and then either `american-` or `british-`, up to frequency tier 60. Both
+land at roughly 120,000 words.
+
+An earlier version expanded a hunspell dictionary instead -- roots plus affix flags,
+`abandon/LDGS` into the five words that spells. That worked for the American dictionary,
+whose affix file has 73 rules, and produced nonsense for the British one, whose 1,362 rules
+include productive derivational affixes that hunspell constrains in ways this plugin's
+expander did not: `underwearisable`, `overnazismativeness`, `miscorporativismativeness`.
+Reimplementing hunspell correctly is a real project and not this one; SCOWL's lists need no
+engine at all. The American list changed by 1% in the move, almost all of it obscure, and
+gained the accented words that were previously dropped rather than folded -- `melee`,
+`emigre`, `confreres`.
+
+WordNet and MyThes are both American, so a British spelling has no definition or synonyms
+of its own. Lookups reduce it first, using the same variant table the consistency check is
+built from, so "colour" and "organised" still answer.
+
 ## Regenerating the data
 
 `words.txt` is committed, so building needs neither the tool nor `data/`; both are kept so
 the list is reproducible and auditable rather than an opaque blob.
 
 ```sh
-go run ./tools/mkwords > words.txt
+go run ./tools/mkwords -locale en-US > words-en-US.txt
+go run ./tools/mkwords -locale en-GB > words-en-GB.txt
 go run ./tools/mkthesaurus > thesaurus.txt
 go run ./tools/mkdefs > definitions.txt
 go run ./tools/mkexceptions > exceptions.txt
@@ -171,9 +198,8 @@ gunzip -c words.txt.gz | grep '^decred$'
 
 ## Data licences and attribution
 
-The **dictionary** is derived from [SCOWL](http://wordlist.sourceforge.net), Copyright
-2000-2018 Kevin Atkinson, with the affix file derived from Geoff Kuenning's Ispell under
-his BSD licence. Full text: **`data/LICENSE-SCOWL`**.
+The **dictionaries** are SCOWL's own word lists, [SCOWL](http://wordlist.sourceforge.net)
+Copyright 2000-2018 Kevin Atkinson. Full text: **`data/LICENSE-SCOWL`**.
 
 The **thesaurus** is the MyThes `th_en_US_v2` data shipped with LibreOffice, derived from
 [WordNet](https://wordnet.princeton.edu), WordNet 2.1 Copyright 2005 Princeton University.
@@ -236,9 +262,11 @@ Disable/remove it from there too.
   Together they are 11MB of text and 3.6MB compressed, which is the difference between a
   15MB module and a 7MB one. It costs nothing at runtime that was not already paid:
   `//go:embed` puts the data in linear memory either way.
-- `data/` -- the sources the datasets are generated from: the hunspell `.dic`/`.aff` pair,
-  the supplemental vocabulary, the MyThes and WordNet data, and every licence.
-- `tools/mkwords/` -- the affix expander that turns `data/` into `words.txt`.
+- `data/scowl/` -- SCOWL's curated word lists, one file per variant and frequency tier.
+- `data/` -- the other sources: the supplemental vocabulary, the function-word and
+  contraction glosses, the MyThes and WordNet data, and every licence.
+- `tools/mkwords/` -- builds one language's `words-*.txt` and `common-*.txt` from
+  `data/scowl`.
 - `tools/mkthesaurus/` -- condenses the MyThes source into `thesaurus.txt`.
 - `tools/mkdefs/` -- condenses WordNet's `data.*` files into `definitions.txt`, merging
   `data/function-words.txt` over the top.

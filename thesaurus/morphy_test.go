@@ -167,3 +167,40 @@ they|pron:people already mentioned
 		t.Errorf(`Lookup("they’ve") = %q, %v; want "they"`, entry.Word, ok)
 	}
 }
+
+// The datasets are American, so a British spelling has no entry of its own.
+// Under an en-GB dictionary those are exactly the words somebody is most
+// likely to select, and returning nothing for "colour" would make the
+// thesaurus look broken in the language it was just switched to.
+func TestLookupReducesBritishSpellings(t *testing.T) {
+	const american = `analyze|verb:to examine in detail
+color|noun:the appearance produced by light of different wavelengths
+favorite|noun:the one preferred
+organize|verb:to arrange into a structure
+recognize|verb:to identify from previous knowledge
+`
+	idx := NewIndex("", american, "")
+
+	for typed, want := range map[string]string{
+		"colour":    "color",
+		"organise":  "organize",
+		"recognise": "recognize",
+		"analyse":   "analyze",
+		// Reduced twice: the inflection first, then the spelling. The
+		// table lists base forms only, so the order matters.
+		"organised":  "organize",
+		"colours":    "color",
+		"favourites": "favorite",
+	} {
+		entry, ok := idx.Lookup(typed)
+		if !ok || entry.Word != want {
+			t.Errorf("Lookup(%q) = %q, %v; want %q", typed, entry.Word, ok, want)
+		}
+	}
+
+	// The American spelling still answers directly, and is not routed
+	// through the table.
+	if entry, ok := idx.Lookup("color"); !ok || entry.Word != "color" {
+		t.Errorf(`Lookup("color") = %q, %v`, entry.Word, ok)
+	}
+}

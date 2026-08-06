@@ -1,8 +1,8 @@
 {
   "id": "spellcheck",
   "name": "Writing Tools",
-  "version": "2.7.1",
-  "description": "Spelling, grammar, phrasing, dictionary and thesaurus support while composing chat messages, posts and comments: a 121,000-word English dictionary with frequency-ranked corrections, 72 grammar rules and 108 phrasing suggestions that explain what is wrong and why, four checks that count across a whole message, and definitions and synonyms covering 86% of the dictionary, reached by reducing a word to the form the data is keyed by. Fully local -- all datasets ship inside the plugin, and it never sees a word you type.",
+  "version": "2.8.0",
+  "description": "Spelling, grammar, phrasing, dictionary and thesaurus support while composing chat messages, posts and comments, in British or American English: a 120,000-word dictionary per language with frequency-ranked corrections, 72 grammar rules and 108 phrasing suggestions that explain what is wrong and why, four checks that count across a whole message, and definitions and synonyms covering 86% of the dictionary. Fully local -- all datasets ship inside the plugin, and it never sees a word you type.",
   "enabledByDefault": false,
   "rendererKind": "dynamic-wasm",
   "wasmFile": "plugin.wasm",

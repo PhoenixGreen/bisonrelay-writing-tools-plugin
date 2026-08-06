@@ -4,9 +4,11 @@ writing-tools-plugin-v*.zip
 # The datasets are embedded compressed; only the .gz files are committed.
 # Keeping the plain text alongside them would be the same data twice, free to
 # drift. Regenerate with the tools/ commands, then run build.sh.
-words.txt
+words-en-US.txt
+words-en-GB.txt
+common-en-US.txt
+common-en-GB.txt
 thesaurus.txt
-common.txt
 definitions.txt
 exceptions.txt
 

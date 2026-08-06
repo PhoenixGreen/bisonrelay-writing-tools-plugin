@@ -1,8 +1,9 @@
 // Command bisonrelay-writing-tools-plugin is a Bison Relay dynamic-wasm plugin
 // providing two capabilities:
 //
-//   - spellcheck-data: a dictionary, a set of writing rules and a set of
-//     declared analysis checks, handed over once when the plugin is enabled.
+//   - spellcheck-data: a dictionary for the requested language, a set of
+//     writing rules and a set of declared analysis checks, handed over once
+//     when the plugin is enabled and again whenever the language changes.
 //     Every match and every count after that happens in the app; there is no
 //     per-keystroke work here.
 //   - thesaurus: synonyms and definitions for one word, answered on demand.
@@ -44,11 +45,27 @@ import (
 // puts the data in the module's linear memory either way, so the only
 // difference is one decompression the first time each is used.
 //
-//go:embed words.txt.gz
-var wordsGZ []byte
+// One pair per language. The two English dictionaries are not subsets of one
+// another -- "colour" is in one and "color" in the other -- so a language is
+// a different list rather than the same list with extras.
+//
+//go:embed words-en-US.txt.gz
+var wordsUSGZ []byte
 
-//go:embed common.txt.gz
-var commonGZ []byte
+//go:embed common-en-US.txt.gz
+var commonUSGZ []byte
+
+//go:embed words-en-GB.txt.gz
+var wordsGBGZ []byte
+
+//go:embed common-en-GB.txt.gz
+var commonGBGZ []byte
+
+// dictionaries maps a language code to its compressed pair.
+var dictionaries = map[string]struct{ words, common []byte }{
+	"en-US": {wordsUSGZ, commonUSGZ},
+	"en-GB": {wordsGBGZ, commonGBGZ},
+}
 
 //go:embed thesaurus.txt.gz
 var thesaurusGZ []byte
@@ -121,11 +138,25 @@ func writeResult(data []byte) uint64 {
 	return (uint64(uint32(ptr)) << 32) | uint64(len(data))
 }
 
+// getSpellcheckData answers the spellcheck-data capability for one language.
+//
+// An unknown or empty language is answered with the default rather than
+// refused: a host that has not been told what is on offer should still get a
+// working checker, and the reply names the language it actually contains.
+//
 //go:wasmexport get_spellcheck_data
-func getSpellcheckData() uint64 {
+func getSpellcheckData(language string) uint64 {
+	dict, ok := dictionaries[language]
+	if !ok {
+		language = spellcheck.DefaultLanguage
+		dict = dictionaries[language]
+	}
+
 	b, err := json.Marshal(spellcheck.Data{
-		Words:          spellcheck.ParseWords(gunzip(wordsGZ)),
-		CommonWords:    spellcheck.ParseWords(gunzip(commonGZ)),
+		Words:          spellcheck.ParseWords(gunzip(dict.words)),
+		CommonWords:    spellcheck.ParseWords(gunzip(dict.common)),
+		Language:       language,
+		Languages:      spellcheck.Languages,
 		GrammarRules:   spellcheck.Rules,
 		AnalysisChecks: spellcheck.AnalysisChecks,
 	})

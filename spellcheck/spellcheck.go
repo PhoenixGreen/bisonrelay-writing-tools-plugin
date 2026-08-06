@@ -50,9 +50,35 @@ type GrammarRule struct {
 	Severity string `json:"severity,omitempty"`
 }
 
+// Language is one of the languages this plugin can check against.
+type Language struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+}
+
+// Languages are every language this plugin ships a dictionary for. Adding
+// one is only data: SCOWL publishes Canadian and Australian lists in exactly
+// the shape tools/mkwords already reads.
+var Languages = []Language{
+	{Code: "en-US", Name: "English (US)"},
+	{Code: "en-GB", Name: "English (UK)"},
+}
+
+// DefaultLanguage is what an unrecognised or empty request falls back to.
+const DefaultLanguage = "en-US"
+
 // Data is the whole payload the capability returns.
 type Data struct {
 	Words []string `json:"words"`
+
+	// Language is the language Words is for, which need not be the one that
+	// was asked for -- a host asking for something this plugin does not have
+	// gets the default and is told which it got, rather than nothing.
+	Language string `json:"language,omitempty"`
+
+	// Languages is every language this provider can serve, so a host can
+	// offer the choice without knowing in advance what is on offer.
+	Languages []Language `json:"languages,omitempty"`
 
 	// CommonWords is a subset of Words ordered most-common-first, used by the
 	// app to rank corrections. Edit distance cannot rank on its own: "teh" is

@@ -1,41 +1,55 @@
-// Command mkwords generates the plugin's wordlist: it expands the
-// SCOWL-derived hunspell dictionary in data/ from roots plus affix flags
-// into the flat list of surface forms the checker actually compares against,
-// then merges data/extra-words.txt on top.
+// Command mkwords generates the plugin's wordlist for one language, from
+// SCOWL's curated word lists in data/scowl, and merges data/extra-words.txt
+// on top.
 //
-// The expansion is why this tool exists. A hunspell .dic stores "abandon/
-// LDGS", not the five words that spells; a checker fed the roots alone
-// flags every inflection a user actually types ("running", "walked") as
-// misspelled. Shipping surface forms keeps the plugin's runtime trivial --
-// a set membership test -- at the cost of a larger, generated file.
+// SCOWL publishes plain lists of surface forms, split by how common each word
+// is (the number on each filename: 10 is the commonest few thousand, 60 the
+// tail of ordinary vocabulary) and by which English uses it. So a language is
+// a choice of which files to read: everyone gets "english-", and then either
+// "american-" or "british-".
+//
+// An earlier version expanded a hunspell dictionary instead -- roots plus
+// affix flags, "abandon/LDGS" into the five words that spells. That worked
+// for the American dictionary, whose affix file has 73 rules, and produced
+// nonsense for the British one, whose 1,362 rules include productive
+// derivational affixes that hunspell's own engine constrains in ways this
+// tool did not: "underwearisable", "overnazismativeness",
+// "miscorporativismativeness". Reimplementing hunspell correctly is a real
+// project and not this one's, and SCOWL's lists need no engine at all --
+// they are already the surface forms. The American list changed by 1% in the
+// move, almost all of it obscure.
 //
 // Run from the repo root:
 //
-//	go run ./tools/mkwords > words.txt
+//	go run ./tools/mkwords -locale en-US > words-en-US.txt
+//	go run ./tools/mkwords -locale en-GB > words-en-GB.txt
 //
-// words.txt is committed, so building the plugin needs neither this tool nor
-// the data/ sources; both are kept so the list is reproducible and auditable
-// rather than an opaque blob.
+// The generated lists are committed, so building the plugin needs neither
+// this tool nor data/scowl; both are kept so the lists are reproducible and
+// auditable rather than opaque blobs.
 package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 )
 
 const (
-	dicPath   = "data/index.dic"
-	affPath   = "data/index.aff"
+	scowlDir  = "data/scowl"
 	extraPath = "data/extra-words.txt"
-	freqDir   = "data/scowl-freq"
-	commonOut = "common.txt"
 )
+
+// maxTier is how far down SCOWL's frequency ladder to read. 60 is the end of
+// ordinary vocabulary; 70 and beyond is where the lists fill with technical
+// and archaic words that nobody typing a chat message meant to write, so
+// accepting them means real typos sail through unflagged.
+const maxTier = 60
 
 // minShortWordTier is how common a one- or two-letter entry must be to be
 // kept. SCOWL carries hundreds of obscure two-letter abbreviations and
@@ -45,249 +59,70 @@ const (
 // flagged and offered "the".
 const minShortWordTier = 35
 
-// rule is one affix transformation: strip these characters off the end (or
-// front), add these, and only where the word matches cond.
-type rule struct {
-	strip string
-	add   string
-	cond  *regexp.Regexp
-}
+// commonTier is the ceiling for the ranked list the app uses to choose
+// between equally-near corrections. Everything at 35 or below is a word
+// people actually write.
+const commonTier = 35
 
-// affix is one flag's worth of rules. cross records whether hunspell allows
-// this affix to combine with one from the other side of the word.
-type affix struct {
-	prefix bool
-	cross  bool
-	rules  []rule
-}
-
-func parseAff(path string) (map[rune]*affix, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	affixes := map[rune]*affix{}
-	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		fields := strings.Fields(sc.Text())
-		if len(fields) < 4 || (fields[0] != "SFX" && fields[0] != "PFX") {
-			continue
-		}
-		flag := []rune(fields[1])[0]
-		isPfx := fields[0] == "PFX"
-
-		// A flag's block opens with "SFX <flag> <cross> <count>", where
-		// cross is Y or N; every later line with the same flag is a rule.
-		if fields[2] == "Y" || fields[2] == "N" {
-			affixes[flag] = &affix{prefix: isPfx, cross: fields[2] == "Y"}
-			continue
-		}
-		a := affixes[flag]
-		if a == nil {
-			continue
-		}
-
-		strip, add, cond := fields[2], fields[3], "."
-		if len(fields) >= 5 {
-			cond = fields[4]
-		}
-		if strip == "0" {
-			strip = ""
-		}
-		if add == "0" {
-			add = ""
-		}
-		// The condition is anchored to whichever end the affix attaches to.
-		pattern := cond + "$"
-		if isPfx {
-			pattern = "^" + cond
-		}
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("flag %c: condition %q: %w", flag, cond, err)
-		}
-		a.rules = append(a.rules, rule{strip: strip, add: add, cond: re})
-	}
-	return affixes, sc.Err()
-}
-
-// apply returns every form a's rules produce from word.
-func apply(word string, a *affix) []string {
-	var out []string
-	for _, r := range a.rules {
-		if !r.cond.MatchString(word) {
-			continue
-		}
-		if a.prefix {
-			if !strings.HasPrefix(word, r.strip) {
-				continue
-			}
-			out = append(out, r.add+word[len(r.strip):])
-		} else {
-			if !strings.HasSuffix(word, r.strip) {
-				continue
-			}
-			out = append(out, word[:len(word)-len(r.strip)]+r.add)
-		}
-	}
-	return out
-}
-
-type wordSet map[string]bool
-
-// add normalizes and keeps a word, dropping anything the checker could never
-// match anyway: empty lines, and entries carrying digits (the dictionary has
-// a few, e.g. "0th", which only exist to spell ordinals).
-func (s wordSet) add(w string) {
-	w = strings.ToLower(strings.TrimSpace(w))
-	if w == "" || strings.ContainsAny(w, "0123456789") {
-		return
-	}
-	s[w] = true
-}
-
-func expandDic(path string, affixes map[rune]*affix, words wordSet) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	sc := bufio.NewScanner(f)
-	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-	sc.Scan() // the first line is the entry count, not a word
-
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" {
-			continue
-		}
-		word, flags := line, ""
-		if i := strings.Index(line, "/"); i >= 0 {
-			word, flags = line[:i], line[i+1:]
-		}
-		words.add(word)
-
-		var suffixed []string
-		for _, fl := range flags {
-			a := affixes[fl]
-			if a == nil {
-				continue
-			}
-			forms := apply(word, a)
-			for _, w := range forms {
-				words.add(w)
-			}
-			if !a.prefix {
-				suffixed = append(suffixed, forms...)
-			}
-		}
-
-		// Cross-product: "unthinkable" needs a prefix applied to an
-		// already-suffixed form, which hunspell permits only when both
-		// sides declare it.
-		for _, fl := range flags {
-			a := affixes[fl]
-			if a == nil || !a.prefix || !a.cross {
-				continue
-			}
-			for _, s := range suffixed {
-				for _, w := range apply(s, a) {
-					words.add(w)
-				}
-			}
-		}
-	}
-	return sc.Err()
-}
-
-// readTiers loads SCOWL's frequency lists: tier 10 is the most common few
-// thousand words, 35 the tail of ordinary vocabulary. A word's tier is the
-// lowest list it appears in.
+// locale is one language this plugin can check against: which of SCOWL's
+// lists apply to it.
 //
-// This exists to rank corrections. Edit distance alone cannot: "teh" is one
-// typo away from "the", "tech", "meh", "th" and "te" alike, and without
-// knowing which of those anyone actually writes, the right answer is buried
-// among the others.
-func readTiers() (map[string]int, error) {
-	entries, err := os.ReadDir(freqDir)
-	if err != nil {
-		return nil, err
-	}
-	tiers := map[string]int{}
-	for _, e := range entries {
-		var tier int
-		if i := strings.LastIndex(e.Name(), "."); i >= 0 {
-			tier, err = strconv.Atoi(e.Name()[i+1:])
-			if err != nil {
-				continue
-			}
-		}
-		f, err := os.Open(filepath.Join(freqDir, e.Name()))
-		if err != nil {
-			return nil, err
-		}
-		sc := bufio.NewScanner(f)
-		for sc.Scan() {
-			// The lists are ISO-8859-1; only the ASCII entries can match a
-			// dictionary this normalizes to lowercase ASCII anyway.
-			w := strings.ToLower(strings.TrimSpace(sc.Text()))
-			if w == "" {
-				continue
-			}
-			if prev, ok := tiers[w]; !ok || tier < prev {
-				tiers[w] = tier
-			}
-		}
-		f.Close()
-		if err := sc.Err(); err != nil {
-			return nil, err
-		}
-	}
-	return tiers, nil
+// "english-" is the shared core, and the variant prefix is what makes the
+// two lists differ -- "colour" is in british-words and not in
+// american-words, and "color" the other way round. The frequency ranking is
+// split the same way, and has to be: a British checker ranking by American
+// frequency would leave "colour" unranked, so a typo of it would be
+// corrected to whatever else happened to be one edit away.
+type locale struct {
+	code     string
+	name     string
+	prefixes []string
 }
 
-func readExtra(path string, words wordSet) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+// locales is the whole language list, and adding one is only data: SCOWL
+// also publishes canadian- and australian- lists in the same shape.
+var locales = []locale{
+	{"en-US", "English (US)", []string{"english-", "american-"}},
+	{"en-GB", "English (UK)", []string{"english-", "british-"}},
+}
 
-	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
+func find(code string) (locale, bool) {
+	for _, l := range locales {
+		if l.code == code {
+			return l, true
 		}
-		words.add(line)
 	}
-	return sc.Err()
+	return locale{}, false
 }
 
 func main() {
-	affixes, err := parseAff(affPath)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "mkwords:", affPath+":", err)
+	code := flag.String("locale", "en-US", "which language to build")
+	flag.Parse()
+	loc, ok := find(*code)
+	if !ok {
+		var codes []string
+		for _, l := range locales {
+			codes = append(codes, l.code)
+		}
+		fmt.Fprintf(os.Stderr, "mkwords: unknown locale %q; have %s\n",
+			*code, strings.Join(codes, ", "))
 		os.Exit(1)
 	}
 
-	words := wordSet{}
-	if err := expandDic(dicPath, affixes, words); err != nil {
-		fmt.Fprintln(os.Stderr, "mkwords:", dicPath+":", err)
+	tiers, err := readTiers(loc)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "mkwords:", scowlDir+":", err)
 		os.Exit(1)
 	}
-	fromDic := len(words)
+
+	words := map[string]bool{}
+	for w := range tiers {
+		words[w] = true
+	}
+	fromScowl := len(words)
+
 	if err := readExtra(extraPath, words); err != nil {
 		fmt.Fprintln(os.Stderr, "mkwords:", extraPath+":", err)
-		os.Exit(1)
-	}
-
-	tiers, err := readTiers()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "mkwords:", freqDir+":", err)
 		os.Exit(1)
 	}
 
@@ -312,41 +147,179 @@ func main() {
 	w := bufio.NewWriter(os.Stdout)
 	defer w.Flush()
 	fmt.Fprintln(w, "# Generated by tools/mkwords -- do not edit.")
-	fmt.Fprintf(w, "# %d words: %d expanded from %s, %d added from %s.\n",
-		len(out), fromDic, dicPath, len(words)-fromDic, extraPath)
-	fmt.Fprintln(w, "# Dictionary licence and attribution: data/LICENSE-SCOWL.")
+	fmt.Fprintf(w, "# %s (%s): %d words, %d from %s and %d from %s.\n",
+		loc.name, loc.code, len(out), fromScowl, scowlDir,
+		len(words)-fromScowl, extraPath)
+	fmt.Fprintln(w, "# Licence and attribution: data/LICENSE-SCOWL.")
 	for _, word := range out {
 		fmt.Fprintln(w, word)
 	}
-	// common.txt is the ranked subset, most common first, for ordering
-	// corrections. Only words the dictionary actually contains: a rank for a
-	// word that can never be suggested is dead weight.
-	common := make([]string, 0, len(words))
-	for _, w := range out {
-		if _, ok := tiers[w]; ok {
-			common = append(common, w)
-		}
-	}
-	sort.SliceStable(common, func(i, j int) bool {
-		return tiers[common[i]] < tiers[common[j]]
-	})
 
-	cf, err := os.Create(commonOut)
+	common, err := writeCommon(loc, tiers, words)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "mkwords:", err)
 		os.Exit(1)
 	}
-	defer cf.Close()
-	cw := bufio.NewWriter(cf)
-	defer cw.Flush()
-	fmt.Fprintln(cw, "# Generated by tools/mkwords -- do not edit.")
-	fmt.Fprintf(cw, "# %d words, most common first, for ranking corrections.\n", len(common))
-	fmt.Fprintln(cw, "# Licence and attribution: data/LICENSE-SCOWL.")
-	for _, w := range common {
-		fmt.Fprintln(cw, w)
+	fmt.Fprintf(os.Stderr,
+		"mkwords: %s: %d words (%d obscure short entries dropped), %d ranked\n",
+		loc.code, len(out), droppedShort, common)
+}
+
+// writeCommon writes the ranked subset the app uses to order corrections,
+// commonest first.
+func writeCommon(loc locale, tiers map[string]int, words map[string]bool) (int, error) {
+	type ranked struct {
+		word string
+		tier int
+	}
+	var list []ranked
+	for w, tier := range tiers {
+		if tier <= commonTier && words[w] {
+			list = append(list, ranked{w, tier})
+		}
+	}
+	// By tier, then alphabetically, so the file is stable between runs --
+	// map iteration order is not.
+	sort.Slice(list, func(i, j int) bool {
+		if list[i].tier != list[j].tier {
+			return list[i].tier < list[j].tier
+		}
+		return list[i].word < list[j].word
+	})
+
+	f, err := os.Create("common-" + loc.code + ".txt")
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+	out := bufio.NewWriter(f)
+	defer out.Flush()
+	fmt.Fprintln(out, "# Generated by tools/mkwords -- do not edit.")
+	fmt.Fprintf(out, "# %s: %d words, most common first.\n", loc.code, len(list))
+	for _, r := range list {
+		fmt.Fprintln(out, r.word)
+	}
+	return len(list), nil
+}
+
+// readTiers loads every SCOWL list this locale uses, keyed by word, with the
+// lowest tier each word appears at.
+//
+// The tier is what ranks corrections. Edit distance alone cannot: "teh" is
+// one typo away from "the", "tech", "meh", "th" and "te" alike, and without
+// knowing which of those people actually write, the intended word is as
+// likely to be missing from the handful shown as not.
+func readTiers(loc locale) (map[string]int, error) {
+	entries, err := os.ReadDir(scowlDir)
+	if err != nil {
+		return nil, err
 	}
 
-	fmt.Fprintf(os.Stderr,
-		"mkwords: %d words (%d obscure short entries dropped), %d ranked -> %s\n",
-		len(out), droppedShort, len(common), commonOut)
+	tiers := map[string]int{}
+	for _, e := range entries {
+		name := e.Name()
+
+		var wanted bool
+		for _, prefix := range loc.prefixes {
+			if strings.HasPrefix(name, prefix) {
+				wanted = true
+				break
+			}
+		}
+		if !wanted {
+			continue
+		}
+
+		dot := strings.LastIndex(name, ".")
+		if dot < 0 {
+			continue
+		}
+		tier, err := strconv.Atoi(name[dot+1:])
+		if err != nil || tier > maxTier {
+			continue
+		}
+
+		f, err := os.Open(filepath.Join(scowlDir, name))
+		if err != nil {
+			return nil, err
+		}
+		sc := bufio.NewScanner(f)
+		for sc.Scan() {
+			// The lists are ISO-8859-1, and accented words are folded rather
+			// than dropped: "melee" and "emigre" are how people type mêlée
+			// and émigré, and the checker's alphabet is ASCII.
+			word := foldToASCII(sc.Text())
+			if word == "" {
+				continue
+			}
+			if prev, ok := tiers[word]; !ok || tier < prev {
+				tiers[word] = tier
+			}
+		}
+		f.Close()
+		if err := sc.Err(); err != nil {
+			return nil, fmt.Errorf("%s: %w", name, err)
+		}
+	}
+	return tiers, nil
+}
+
+// asciiFolds are the accented letters SCOWL's lists actually contain,
+// decoded from ISO-8859-1 to the letter somebody would type instead.
+var asciiFolds = map[rune]rune{
+	'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
+	'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+	'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+	'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
+	'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
+	'ñ': 'n', 'ç': 'c', 'ý': 'y', 'ÿ': 'y',
+}
+
+// foldToASCII lowercases a SCOWL entry and reduces its accents, returning ""
+// for anything that still is not a plain word.
+func foldToASCII(line string) string {
+	// The files are ISO-8859-1: each byte is one code point, which is what
+	// ranging over the decoded string below assumes.
+	var decoded []rune
+	for _, b := range []byte(strings.TrimSpace(line)) {
+		decoded = append(decoded, rune(b))
+	}
+
+	var b strings.Builder
+	for _, r := range decoded {
+		if fold, ok := asciiFolds[r]; ok {
+			r = fold
+		}
+		switch {
+		case r >= 'A' && r <= 'Z':
+			b.WriteRune(r + 32)
+		case r >= 'a' && r <= 'z', r == '\'', r == '.', r == '-':
+			b.WriteRune(r)
+		default:
+			// A word with anything else in it is not one this checker can
+			// compare against.
+			return ""
+		}
+	}
+	return b.String()
+}
+
+// readExtra merges the supplemental vocabulary: words SCOWL does not carry
+// but a Bison Relay user writes constantly.
+func readExtra(path string, words map[string]bool) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := strings.ToLower(strings.TrimSpace(sc.Text()))
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		words[line] = true
+	}
+	return sc.Err()
 }

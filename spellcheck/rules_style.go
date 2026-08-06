@@ -281,7 +281,7 @@ func wordBoundary(phrase string) string {
 // English, programme/program and enquiry/inquiry differ in sense, and metre
 // and meter are separate words. Flagging those would be flagging correct
 // writing.
-var variantPairs = []string{
+var VariantPairs = []string{
 	"organise|organize",
 	"organised|organized",
 	"organisation|organization",
@@ -321,9 +321,15 @@ var variantPairs = []string{
 	"acknowledgement|acknowledgment",
 }
 
-// splitVariant is here so the pair format has exactly one reader; the app
+// SplitVariant is here so the pair format has exactly one reader; the app
 // parses the same strings and the two must agree on the separator.
-func splitVariant(pair string) (string, string, bool) {
+//
+// Exported alongside VariantPairs because the thesaurus needs the same list:
+// WordNet is American, so a British spelling has no entry of its own and has
+// to be reduced to its pair before it can be looked up. Two copies of this
+// list would drift, and the two features would then disagree about which
+// spellings are the same word.
+func SplitVariant(pair string) (string, string, bool) {
 	british, american, found := strings.Cut(pair, "|")
 	if !found || british == "" || american == "" {
 		return "", "", false

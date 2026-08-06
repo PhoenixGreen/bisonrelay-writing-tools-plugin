@@ -1,6 +1,10 @@
 package thesaurus
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/PhoenixGreen/bisonrelay-writing-tools-plugin/spellcheck"
+)
 
 // morphy.go reduces a word as typed to the form the datasets are keyed by.
 //
@@ -114,8 +118,8 @@ func (idx *Index) candidates(word string) []string {
 		add(form)
 	}
 
-	if base, ok := irregularContractions[base]; ok {
-		add(base)
+	if contraction, ok := irregularContractions[base]; ok {
+		add(contraction)
 	}
 
 	for _, rules := range [][]detachment{
@@ -138,6 +142,22 @@ func (idx *Index) candidates(word string) []string {
 				!isVowel(stem[len(stem)-1]) {
 				add(stem[:len(stem)-1])
 			}
+		}
+	}
+
+	// WordNet and MyThes are both American, so a British spelling has no
+	// entry of its own: "colour" and "recognise" would come back with
+	// nothing at all under an en-GB dictionary, which is exactly when
+	// somebody is most likely to select them.
+	//
+	// Applied last, to every form found so far rather than only to the word
+	// as typed. The two reductions compose in either order and the table
+	// only lists base forms, so "colours" has to lose its "s" before the
+	// table recognises it -- and "organised" has to lose its "d" before
+	// "organise" can become "organize".
+	for _, form := range append([]string(nil), out...) {
+		if american, ok := americanSpelling[form]; ok {
+			add(american)
 		}
 	}
 	return out
@@ -179,4 +199,19 @@ func foldApostrophes(word string) string {
 	return strings.NewReplacer(
 		"\u2019", "'", "\u02bc", "'", "\u2018", "'",
 	).Replace(word)
+}
+
+// americanSpelling maps a British spelling to the American one the datasets
+// are written in. Derived from the same pair list the spelling-consistency
+// check uses, so the two cannot disagree about what counts as a pair.
+var americanSpelling = buildAmericanSpelling()
+
+func buildAmericanSpelling() map[string]string {
+	out := make(map[string]string, len(spellcheck.VariantPairs))
+	for _, pair := range spellcheck.VariantPairs {
+		if british, american, ok := spellcheck.SplitVariant(pair); ok {
+			out[british] = american
+		}
+	}
+	return out
 }
