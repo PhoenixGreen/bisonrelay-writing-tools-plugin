@@ -55,13 +55,22 @@ rules out most of what a word processor offers -- subject/verb agreement, their/
 its/it's -- none of which a regex can decide without guessing. A filler-word rule was
 written and then removed when its own test caught it firing on "he said quite clearly".
 
-**Function words.** 90 hand-written glosses for the words WordNet structurally cannot hold.
+**Function words and contractions.** 143 hand-written glosses for the words WordNet structurally cannot hold.
 It is organised as four networks -- nouns, verbs, adjectives, adverbs -- and has nothing at
 all for "the", "of", "although" or "which". Those are the commonest words in English and so
 the ones a reader is likeliest to select, which made the gap look like a broken feature
 rather than a boundary of the data. Each says what the word *does* in a sentence, because
 that is what these words have instead of a meaning. They replace WordNet's entry where there
 is one, since "will" as willpower is not the sense anyone selecting it means.
+
+Contractions are here for the same reason -- both halves of one are function words, so
+WordNet holds none of them. The negatives are spelled out rather than left to reduce to
+their base verb: "wouldn't" reducing to "would" is true and useless, because it drops the
+negation that is the whole reason the word is there.
+
+A typographic apostrophe is folded to a plain one before any lookup. A text field that
+substitutes U+2019 as you type -- which macOS does by default -- otherwise makes every
+contraction unfindable, since the data is keyed with the plain form.
 
 **Confusable pairs.** 33 rules covering then/than, lose/loose, affect/effect, your/you're,
 to/too, whose/who's, their/they're and the past participles after have/has/had. LanguageTool
@@ -95,7 +104,7 @@ names a check the app knows how to run and supplies the threshold, the wording a
 explanation. Same division as the regexes, which the plugin also writes and never executes.
 An app that does not implement an id ignores it, so a check can ship here first.
 
-**Definitions.** 77,496 words and 111,250 meanings, condensed from WordNet 3.1. Up to
+**Definitions.** 77,549 words and 111,303 meanings, condensed from WordNet 3.1. Up to
 three meanings per word, each labelled with its part of speech, with WordNet's usage
 examples dropped -- a menu has room for what the word means and not for a paragraph
 demonstrating it.

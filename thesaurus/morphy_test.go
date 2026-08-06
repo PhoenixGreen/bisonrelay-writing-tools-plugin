@@ -114,3 +114,56 @@ func TestLookupWithoutExceptions(t *testing.T) {
 		t.Error(`Lookup("went") found something without the exception list`)
 	}
 }
+
+// Contractions are two words run together and appear in neither source. The
+// commonest are glossed by hand -- reducing "wouldn't" to "would" drops the
+// negation -- and the rest fall back to the base word.
+func TestLookupHandlesContractions(t *testing.T) {
+	const glossed = `can't|verb:short for "cannot"
+she|pron:a female person
+they|pron:people already mentioned
+wouldn't|verb:short for "would not"
+`
+	idx := NewIndex("", glossed, irregular)
+
+	// A hand-written gloss wins outright, and is not reduced away.
+	for _, word := range []string{"can't", "wouldn't"} {
+		entry, ok := idx.Lookup(word)
+		if !ok || entry.Word != word {
+			t.Errorf("Lookup(%q) = %q, %v; want the word itself", word, entry.Word, ok)
+		}
+	}
+
+	// The rest reduce to the base word.
+	for typed, want := range map[string]string{
+		"she'd":   "she",
+		"she'll":  "she",
+		"they've": "they",
+		"they're": "they",
+	} {
+		entry, ok := idx.Lookup(typed)
+		if !ok || entry.Word != want {
+			t.Errorf("Lookup(%q) = %q, %v; want %q", typed, entry.Word, ok, want)
+		}
+	}
+}
+
+// Reported: "I've" was flagged as a misspelling, because macOS substitutes
+// U+2019 for a typed apostrophe. The data is keyed with the plain one, so
+// every contraction was unfindable as actually typed.
+func TestLookupFoldsTypographicApostrophes(t *testing.T) {
+	const glossed = `can't|verb:short for "cannot"
+they|pron:people already mentioned
+`
+	idx := NewIndex("", glossed, "")
+
+	for _, word := range []string{"can’t", "canʼt", "can‘t"} {
+		if entry, ok := idx.Lookup(word); !ok || entry.Word != "can't" {
+			t.Errorf("Lookup(%q) = %q, %v; want the entry for can't",
+				word, entry.Word, ok)
+		}
+	}
+	if entry, ok := idx.Lookup("they’ve"); !ok || entry.Word != "they" {
+		t.Errorf(`Lookup("they’ve") = %q, %v; want "they"`, entry.Word, ok)
+	}
+}

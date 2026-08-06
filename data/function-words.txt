@@ -180,6 +180,68 @@ might|verb:expresses a weaker possibility than "may"
 must|verb:expresses necessity or strong likelihood
 ought|verb:expresses duty or what is advisable
 
+# --- contractions ---
+# WordNet has none of these either: a contraction is two function words run
+# together, and both halves are outside its four networks. Each is glossed as
+# what it stands for, which is what somebody selecting one wants to know.
+#
+# The negatives are spelled out rather than left to reduce to their base verb.
+# "Wouldn't" reducing to "would" is true and useless -- it drops the negation,
+# which is the whole reason the word is there.
+can't|verb:short for "cannot" -- expresses inability or refusal
+cannot|verb:the negative of "can" -- expresses inability or refusal
+won't|verb:short for "will not"
+shan't|verb:short for "shall not"
+don't|verb:short for "do not"
+doesn't|verb:short for "does not"
+didn't|verb:short for "did not"
+isn't|verb:short for "is not"
+aren't|verb:short for "are not"
+wasn't|verb:short for "was not"
+weren't|verb:short for "were not"
+hasn't|verb:short for "has not"
+haven't|verb:short for "have not"
+hadn't|verb:short for "had not"
+wouldn't|verb:short for "would not"
+couldn't|verb:short for "could not"
+shouldn't|verb:short for "should not"
+mustn't|verb:short for "must not"
+mightn't|verb:short for "might not"
+needn't|verb:short for "need not"
+ain't|verb:a non-standard contraction of "am not", "is not" or "are not"
+i'm|pron:short for "I am"
+i've|pron:short for "I have"
+i'd|pron:short for "I would" or "I had"
+i'll|pron:short for "I will"
+you're|pron:short for "you are"
+you've|pron:short for "you have"
+you'd|pron:short for "you would" or "you had"
+you'll|pron:short for "you will"
+he's|pron:short for "he is" or "he has"
+he'd|pron:short for "he would" or "he had"
+he'll|pron:short for "he will"
+she's|pron:short for "she is" or "she has"
+she'd|pron:short for "she would" or "she had"
+she'll|pron:short for "she will"
+it's|pron:short for "it is" or "it has" -- the possessive "its" has no apostrophe
+we're|pron:short for "we are"
+we've|pron:short for "we have"
+we'd|pron:short for "we would" or "we had"
+we'll|pron:short for "we will"
+they're|pron:short for "they are"
+they've|pron:short for "they have"
+they'd|pron:short for "they would" or "they had"
+they'll|pron:short for "they will"
+that's|pron:short for "that is" or "that has"
+there's|adv:short for "there is" or "there has"
+here's|adv:short for "here is"
+who's|pron:short for "who is" or "who has" -- the possessive "whose" has no apostrophe
+what's|pron:short for "what is" or "what has"
+where's|adv:short for "where is"
+let's|verb:short for "let us" -- introduces a suggestion
+that'll|pron:short for "that will"
+there'll|adv:short for "there will"
+
 # --- the commonest adverbs and particles WordNet also omits ---
 not|adv:makes a statement negative
 n't|adv:the shortened form of "not", attached to a verb

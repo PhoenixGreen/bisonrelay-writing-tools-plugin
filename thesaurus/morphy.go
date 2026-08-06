@@ -43,7 +43,30 @@ var (
 	// people look up "quickly" and want "quick", which WordNet holds as the
 	// adjective. Offered last, so a real adverb entry always wins.
 	advRules = []detachment{{"ly", ""}}
+
+	// A contraction is two words run together, and neither WordNet nor
+	// MyThes holds one. The commonest are glossed by hand in
+	// data/function-words.txt, because reducing "wouldn't" to "would" drops
+	// the negation that is the whole reason the word is there. These rules
+	// are for the rest, where the base word is a fair answer: "she'd" to
+	// "she", "they've" to "they".
+	//
+	// Tried last of all, so a hand-written gloss always wins.
+	contractionRules = []detachment{
+		{"n't", ""}, {"'ve", ""}, {"'re", ""},
+		{"'ll", ""}, {"'d", ""}, {"'m", ""},
+	}
 )
+
+// irregularContractions are the ones the suffix rules mangle: stripping
+// "n't" from "can't" leaves "ca". Kept here rather than in the generated
+// exception list, which is WordNet's and should stay as WordNet wrote it.
+var irregularContractions = map[string]string{
+	"can't":  "can",
+	"won't":  "will",
+	"shan't": "shall",
+	"ain't":  "be",
+}
 
 // candidates returns the forms [word] might reduce to, best first.
 //
@@ -55,7 +78,12 @@ var (
 // This yields possibilities, not answers. The caller tries each against the
 // data and takes the first that exists, which is what makes an over-eager
 // rule harmless.
+//
+// A typographic apostrophe is folded to a plain one first: a text field that
+// substitutes U+2019 as you type would otherwise make every contraction
+// unfindable, since the data is keyed with the plain form.
 func (idx *Index) candidates(word string) []string {
+	word = foldApostrophes(word)
 	seen := map[string]bool{word: true}
 	out := []string{word}
 	add := func(w string) {
@@ -86,7 +114,13 @@ func (idx *Index) candidates(word string) []string {
 		add(form)
 	}
 
-	for _, rules := range [][]detachment{nounRules, verbRules, adjRules, advRules} {
+	if base, ok := irregularContractions[base]; ok {
+		add(base)
+	}
+
+	for _, rules := range [][]detachment{
+		nounRules, verbRules, adjRules, advRules, contractionRules,
+	} {
 		for _, r := range rules {
 			if !strings.HasSuffix(base, r.suffix) {
 				continue
@@ -133,4 +167,16 @@ func (idx *Index) exceptionsFor(word string) []string {
 		return nil
 	}
 	return strings.Split(rest, ",")
+}
+
+// foldApostrophes replaces the apostrophes a text field may substitute with
+// the plain one the data is keyed by. All of them are a single rune, so this
+// cannot change what the word is -- only how it is spelled.
+func foldApostrophes(word string) string {
+	if !strings.ContainsAny(word, "\u2019\u02bc\u2018") {
+		return word
+	}
+	return strings.NewReplacer(
+		"\u2019", "'", "\u02bc", "'", "\u2018", "'",
+	).Replace(word)
 }
