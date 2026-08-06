@@ -121,6 +121,58 @@ var correctText = []string{
 	"There are two of them, and their channels are both open.",
 	"They brought their own hardware to the meetup.",
 	"I told them there would be a delay.",
+
+	// then/than used correctly, in both directions.
+	"I would rather walk than drive.",
+	"Other than that, it went fine.",
+	"We synced the wallet and then sent the payment.",
+	"Back then the fees were higher.",
+
+	// lose/loose. The adjective is the whole reason the rule needs an object
+	// after it before it fires.
+	"The connector is loose, so check it before you plug in.",
+	"He handed over a loose collection of notes.",
+	"I did not want to lose the channel.",
+
+	// affect/effect. "Effect" as a verb is real; so is "affect" as a noun in
+	// clinical writing, though that one is rarer than the typo.
+	"The upgrade will effect change across the network.",
+	"The fee had no effect on routing.",
+	"Latency does affect the user experience.",
+
+	// your/you're. Every one of these was flagged by an earlier draft of the
+	// rule, and every one of them is correct.
+	"It is your right to refuse.",
+	"Please confirm your correct address.",
+	"We received your late payment yesterday.",
+	"Your next appointment is on Tuesday.",
+	"Thanks for your amazing work on the relay.",
+	"Your invited guests can bring one other person.",
+	"Your mistaken belief is understandable.",
+
+	// to/too. The bare "to" before an adjective is fine; only the leading
+	// verb makes it wrong.
+	"I spoke to many people about it.",
+	"We went to great lengths to fix it.",
+	"That is to be expected at this stage.",
+
+	// in principal. "Principal" is also an adjective.
+	"The bank operates in principal cities only.",
+	"Interest is charged on principal amounts over 1 DCR.",
+	"I agree in principle with the proposal.",
+
+	// have + participle, done properly.
+	"They have gone quiet since the release.",
+	"We have run the migration twice.",
+	"She has read the specification.",
+
+	// Words the confusion rules cover, used the right way round.
+	"Whose keys are these?",
+	"Who's going to review it?",
+	"Please advise us on the best approach.",
+	"Thanks for the advice about routing.",
+	"Bear with me while I sync.",
+	"That was a part of the original design.",
 }
 
 // TestRulesDoNotFireOnCorrectText is the false-positive guard. A wavy
@@ -145,12 +197,13 @@ func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 			}
 		}
 	}
-	// Six rules are beyond RE2 by design: three use backreferences (repeated
-	// word, repeated punctuation, excessive punctuation) and three use
-	// lookarounds (sentence capital, missing space, the "I" pronoun). They
-	// are written in Dart's dialect and are covered by the app's tests, where
-	// they actually run.
-	if skipped > 6 {
+	// Eight rules are beyond RE2 by design: three use backreferences
+	// (repeated word, repeated punctuation, excessive punctuation) and five
+	// use lookarounds (sentence capital, missing space, the "I" pronoun, "me
+	// to" at the end of a sentence, and "in principal" at the end of a
+	// clause). They are written in Dart's dialect and are covered by the
+	// app's tests, where they actually run.
+	if skipped > 8 {
 		t.Errorf("%d rules could not be compiled by RE2; expected only the "+
 			"backreference and lookaround ones", skipped)
 	}
@@ -167,7 +220,6 @@ func TestRulesCatchTheirOwnMistake(t *testing.T) {
 		"Space inside bracket":     "( hello)",
 		"\"a lot\" is two words":   "thanks alot",
 		"Missing apostrophe":       "i cant do it",
-		"Wordy":                    "due to the fact that it rained",
 		// Keyed by the rule's message template, not the expanded text: a
 		// message may reference the pattern's capture groups.
 		"Should be \"there $1\"": "their is a problem",
@@ -193,5 +245,66 @@ func TestRulesCatchTheirOwnMistake(t *testing.T) {
 		if !fired {
 			t.Errorf("no rule with message %q flagged %q", message, text)
 		}
+	}
+}
+
+// categories is the closed set the app groups rules by. Adding one is a
+// deliberate act -- the popup heading it appears under is written to match --
+// so a typo in an existing name must not quietly create a new group.
+var categories = map[string]bool{
+	"Spacing":        true,
+	"Punctuation":    true,
+	"Capitalization": true,
+	"Grammar":        true,
+	"Confused words": true,
+	"Style":          true,
+	"Repetition":     true,
+	"Readability":    true,
+	"Consistency":    true,
+}
+
+// TestRulesAreExplained guards the thing a new rule is likeliest to be
+// missing. A rule without an explanation still works -- the app falls back to
+// the message alone -- so nothing breaks visibly, and the gap survives.
+func TestRulesAreExplained(t *testing.T) {
+	for i, r := range Rules {
+		if !categories[r.Category] {
+			t.Errorf("Rules[%d] (%q): category %q is not one of the known groups",
+				i, r.Message, r.Category)
+		}
+		if r.Explanation == "" {
+			t.Errorf("Rules[%d] (%q) has no explanation", i, r.Message)
+			continue
+		}
+		if !strings.HasSuffix(r.Explanation, ".") {
+			t.Errorf("Rules[%d] (%q): explanation is not a sentence: %q",
+				i, r.Message, r.Explanation)
+		}
+		// An explanation no longer than the message is repeating it rather
+		// than explaining it, which is worse than none: it takes up the space
+		// where the reader expected to learn something.
+		if len(r.Explanation) <= len(r.Message) {
+			t.Errorf("Rules[%d] (%q): explanation adds nothing: %q",
+				i, r.Message, r.Explanation)
+		}
+	}
+}
+
+// Rules sharing a message must at least agree on which group they belong to.
+//
+// Only the category, not the explanation. Explanations were once required to
+// match as well, on the reasoning that two rules saying the same thing should
+// say it the same way -- but the generated style rules quote the phrase they
+// caught ("\"in regard to\" can usually be shortened to \"about\""), which is
+// more use than a shared sentence would be. A category that disagrees is
+// still a mistake: it decides which page the issue is listed on.
+func TestSharedMessagesShareTheirCategory(t *testing.T) {
+	seen := map[string]string{}
+	for i, r := range Rules {
+		if was, ok := seen[r.Message]; ok && was != r.Category {
+			t.Errorf("Rules[%d] (%q) is in category %q, but an earlier rule "+
+				"with the same message is in %q", i, r.Message, r.Category, was)
+		}
+		seen[r.Message] = r.Category
 	}
 }

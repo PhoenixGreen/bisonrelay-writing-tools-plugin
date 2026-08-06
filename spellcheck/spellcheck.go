@@ -25,6 +25,29 @@ type GrammarRule struct {
 	// groups as $1, $2 and so on. Empty means the rule only flags the text
 	// and proposes nothing -- correct when there is no single right fix.
 	Suggest string `json:"suggest"`
+
+	// Category groups the rule for display: "Spacing", "Punctuation",
+	// "Capitalization", "Grammar", "Confused words", "Style".
+	Category string `json:"category,omitempty"`
+
+	// Explanation says what is wrong and why, for a reader who does not
+	// already know -- which is the point of showing it. Message has to fit a
+	// menu row and can only name the problem; this does not, and so is where
+	// the rule earns its keep for anyone still learning the distinction.
+	//
+	// Written for the reader, not the implementer: it explains the English,
+	// never the regex.
+	Explanation string `json:"explanation,omitempty"`
+
+	// Severity separates a mistake from an opinion: empty (meaning "error")
+	// for text that is wrong whatever the writer meant, SeveritySuggestion
+	// for a rewrite that is usually an improvement and sometimes not.
+	//
+	// The distinction is what lets this plugin ship opinions at all. Every
+	// error rule holds to a standard of never firing on correct writing; the
+	// style rules cannot meet it and are not asked to, because the app marks
+	// them in a different colour and lists them apart.
+	Severity string `json:"severity,omitempty"`
 }
 
 // Data is the whole payload the capability returns.
@@ -39,6 +62,10 @@ type Data struct {
 	CommonWords []string `json:"commonWords,omitempty"`
 
 	GrammarRules []GrammarRule `json:"grammarRules"`
+
+	// AnalysisChecks are the checks that count rather than match -- see
+	// analysis.go.
+	AnalysisChecks []AnalysisCheck `json:"analysisChecks,omitempty"`
 }
 
 // domainTLDs are the endings that mark a dot as part of a web address rather
@@ -48,7 +75,17 @@ const domainTLDs = "com|org|net|edu|gov|mil|int|io|dev|app|xyz|info|biz|tv|" +
 	"ai|gg|rs|sh|ly|cc|onion|uk|de|fr|ru|au|ca|us|jp|cn|nz|za|eu|ch|nl|se|" +
 	"tech|site|online|store|blog|news|wiki|link|page|pro|me|co|gl|fm"
 
-// Rules are the writing checks, in the order they are applied.
+// Rules are every writing check, in the order they are applied: the errors
+// below, then the confusable pairs in rules_confusions.go, then the opinions
+// in rules_style.go.
+//
+// Only the first two groups fire on text that is wrong whatever the writer
+// meant. The third is marked SeveritySuggestion and holds to a different
+// standard -- see the note at the top of rules_style.go.
+var Rules = append(append(append([]GrammarRule{}, errorRules...),
+	confusionRules...), styleRules...)
+
+// errorRules are the checks that fire only on text that is wrong.
 //
 // Every rule here is deliberately conservative, because a false positive
 // costs far more than a missed error: a wavy underline under correct writing
@@ -58,29 +95,37 @@ const domainTLDs = "com|org|net|edu|gov|mil|int|io|dev|app|xyz|info|biz|tv|" +
 // checks people expect from a word processor -- subject/verb agreement,
 // their/there, its/it's, a/an before an acronym -- none of which a regex can
 // decide without guessing.
-var Rules = []GrammarRule{
+var errorRules = []GrammarRule{
 	// --- doubled input: almost always a slip of the hands ---
 	{
-		Pattern: `\b(\w+)([ \t]+)\1\b`,
-		Message: "Repeated word",
-		Suggest: "$1",
+		Pattern:     `\b(\w+)([ \t]+)\1\b`,
+		Message:     "Repeated word",
+		Suggest:     "$1",
+		Category:    "Grammar",
+		Explanation: "The same word appears twice in a row. This is nearly always a slip while typing rather than something intended.",
 	},
 	{
-		Pattern: `[ ]{2,}`,
-		Message: "Multiple spaces",
-		Suggest: " ",
+		Pattern:     `[ ]{2,}`,
+		Message:     "Multiple spaces",
+		Suggest:     " ",
+		Category:    "Spacing",
+		Explanation: "There is more than one space between these words. A single space is standard, and the extra ones show up as an uneven gap.",
 	},
 	{
-		Pattern: `([,;:])\1+`,
-		Message: "Repeated punctuation",
-		Suggest: "$1",
+		Pattern:     `([,;:])\1+`,
+		Message:     "Repeated punctuation",
+		Suggest:     "$1",
+		Category:    "Punctuation",
+		Explanation: "The same punctuation mark appears more than once in a row. One is enough.",
 	},
 
 	// --- spacing around punctuation ---
 	{
-		Pattern: `[ \t]+([,.!?;:])`,
-		Message: "Space before punctuation",
-		Suggest: "$1",
+		Pattern:     `[ \t]+([,.!?;:])`,
+		Message:     "Space before punctuation",
+		Suggest:     "$1",
+		Category:    "Spacing",
+		Explanation: "In English, punctuation attaches to the word before it with no space in between.",
 	},
 	{
 		// Fires whatever the case of the next letter, and fixes both faults
@@ -101,23 +146,31 @@ var Rules = []GrammarRule{
 		// and a missed flag costs less than a wrong one.
 		Pattern: `(?<=\w\w|[)\]"'])([.!?])(?!(?:` + domainTLDs +
 			`)\b|[\w-]*\.(?:` + domainTLDs + `)\b)([A-Za-z])`,
-		Message: "Missing space after punctuation",
-		Suggest: "$1 $U2",
+		Message:     "Missing space after punctuation",
+		Suggest:     "$1 $U2",
+		Category:    "Spacing",
+		Explanation: "Punctuation is followed by a space, which separates it from the next word. Without one the two run together.",
 	},
 	{
-		Pattern: `([,;:])([A-Za-z])`,
-		Message: "Missing space after punctuation",
-		Suggest: "$1 $2",
+		Pattern:     `([,;:])([A-Za-z])`,
+		Message:     "Missing space after punctuation",
+		Suggest:     "$1 $2",
+		Category:    "Spacing",
+		Explanation: "Punctuation is followed by a space, which separates it from the next word. Without one the two run together.",
 	},
 	{
-		Pattern: `\(\s+`,
-		Message: "Space inside bracket",
-		Suggest: "(",
+		Pattern:     `\(\s+`,
+		Message:     "Space inside bracket",
+		Suggest:     "(",
+		Category:    "Spacing",
+		Explanation: "Brackets sit tight against the text they enclose, with no space just inside them.",
 	},
 	{
-		Pattern: `\s+\)`,
-		Message: "Space inside bracket",
-		Suggest: ")",
+		Pattern:     `\s+\)`,
+		Message:     "Space inside bracket",
+		Suggest:     ")",
+		Category:    "Spacing",
+		Explanation: "Brackets sit tight against the text they enclose, with no space just inside them.",
 	},
 
 	// --- capitalisation with one unambiguous answer ---
@@ -128,98 +181,134 @@ var Rules = []GrammarRule{
 		// A dot on either side means an initialism -- "i.e." -- and not the
 		// pronoun at all. That costs the rule a genuine "i" ending a
 		// sentence, which is a sentence hardly anyone writes.
-		Pattern: `(?<!\.)\bi\b(?!\.)`,
-		Message: "\"I\" is capitalised",
-		Suggest: "I",
+		Pattern:     `(?<!\.)\bi\b(?!\.)`,
+		Message:     "\"I\" is capitalised",
+		Suggest:     "I",
+		Category:    "Capitalization",
+		Explanation: "The pronoun \"I\" is always written as a capital, wherever it appears in a sentence. It is the only single-letter word in English that is.",
 	},
 	{
-		Pattern: `\bi'(m|ve|ll|d)\b`,
-		Message: "\"I\" is capitalised",
-		Suggest: "I'$1",
+		Pattern:     `\bi'(m|ve|ll|d)\b`,
+		Message:     "\"I\" is capitalised",
+		Suggest:     "I'$1",
+		Category:    "Capitalization",
+		Explanation: "The pronoun \"I\" is always written as a capital, wherever it appears in a sentence. It is the only single-letter word in English that is.",
 	},
 
 	// --- contractions people reliably mistype ---
 	// Each of these is wrong in every context, unlike its/it's, which is
 	// exactly why those two are absent.
 	{
-		Pattern: `\byour welcome\b`,
-		Message: "Should be \"you're welcome\"",
-		Suggest: "you're welcome",
+		Pattern:     `\byour welcome\b`,
+		Message:     "Should be \"you're welcome\"",
+		Suggest:     "you're welcome",
+		Category:    "Confused words",
+		Explanation: "\"Your\" is a possessive, as in \"your wallet\". The phrase means \"you are welcome\", so it needs \"you're\".",
 	},
 	{
-		Pattern: `\b(could|should|would|must|might)\s+of\b`,
-		Message: "Should be \"$1 have\"",
-		Suggest: "$1 have",
+		Pattern:     `\b(could|should|would|must|might)\s+of\b`,
+		Message:     "Should be \"$1 have\"",
+		Suggest:     "$1 have",
+		Category:    "Confused words",
+		Explanation: "\"Could of\" is a misreading of how \"could've\" sounds. The spoken contraction is short for \"could have\".",
 	},
 	{
-		Pattern: `\balot\b`,
-		Message: "\"a lot\" is two words",
-		Suggest: "a lot",
+		Pattern:     `\balot\b`,
+		Message:     "\"a lot\" is two words",
+		Suggest:     "a lot",
+		Category:    "Grammar",
+		Explanation: "\"A lot\" is always written as two words. \"Alot\" is not a word in English.",
 	},
 	{
-		Pattern: `\beveryday (I|you|we|they|he|she|it)\b`,
-		Message: "\"every day\" is two words as an adverb",
-		Suggest: "every day $1",
+		Pattern:     `\beveryday (I|you|we|they|he|she|it)\b`,
+		Message:     "\"every day\" is two words as an adverb",
+		Suggest:     "every day $1",
+		Category:    "Grammar",
+		Explanation: "\"Everyday\" as one word is an adjective meaning ordinary, as in \"an everyday problem\". Saying when something happens takes two words.",
 	},
 	{
-		Pattern: `\bcant\b`,
-		Message: "Missing apostrophe",
-		Suggest: "can't",
+		Pattern:     `\bcant\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "can't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bwont\b`,
-		Message: "Missing apostrophe",
-		Suggest: "won't",
+		Pattern:     `\bwont\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "won't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bdont\b`,
-		Message: "Missing apostrophe",
-		Suggest: "don't",
+		Pattern:     `\bdont\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "don't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bdoesnt\b`,
-		Message: "Missing apostrophe",
-		Suggest: "doesn't",
+		Pattern:     `\bdoesnt\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "doesn't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bisnt\b`,
-		Message: "Missing apostrophe",
-		Suggest: "isn't",
+		Pattern:     `\bisnt\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "isn't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bwasnt\b`,
-		Message: "Missing apostrophe",
-		Suggest: "wasn't",
+		Pattern:     `\bwasnt\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "wasn't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bwouldnt\b`,
-		Message: "Missing apostrophe",
-		Suggest: "wouldn't",
+		Pattern:     `\bwouldnt\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "wouldn't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bcouldnt\b`,
-		Message: "Missing apostrophe",
-		Suggest: "couldn't",
+		Pattern:     `\bcouldnt\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "couldn't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bshouldnt\b`,
-		Message: "Missing apostrophe",
-		Suggest: "shouldn't",
+		Pattern:     `\bshouldnt\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "shouldn't",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bthats\b`,
-		Message: "Missing apostrophe",
-		Suggest: "that's",
+		Pattern:     `\bthats\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "that's",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\bwhats\b`,
-		Message: "Missing apostrophe",
-		Suggest: "what's",
+		Pattern:     `\bwhats\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "what's",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern: `\blets\s+(go|see|say|try|talk|do|get|make)\b`,
-		Message: "Missing apostrophe",
-		Suggest: "let's $1",
+		Pattern:     `\blets\s+(go|see|say|try|talk|do|get|make)\b`,
+		Message:     "Missing apostrophe",
+		Suggest:     "let's $1",
+		Category:    "Punctuation",
+		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 
 	{
@@ -254,9 +343,11 @@ var Rules = []GrammarRule{
 		// of every sentence they send. It is included because a missing
 		// capital is a real error and the fix is unambiguous, but it is the
 		// first rule to drop if the underlines become wallpaper.
-		Pattern: `(?<=^|[.!?]\s|\n)([a-z])([a-z0-9']*)`,
-		Message: "Sentence should start with a capital",
-		Suggest: "$U1$2",
+		Pattern:     `(?<=^|[.!?]\s|\n)([a-z])([a-z0-9']*)`,
+		Message:     "Sentence should start with a capital",
+		Suggest:     "$U1$2",
+		Category:    "Capitalization",
+		Explanation: "A sentence begins with a capital letter. This applies at the start of a new paragraph as well as after a full stop.",
 	},
 
 	// --- confusions with a decidable answer ---
@@ -265,14 +356,18 @@ var Rules = []GrammarRule{
 	// does not: "their" is a possessive, so a pronoun or a verb cannot follow
 	// it, whatever the sentence is about.
 	{
-		Pattern: `\btheir\s+(is|are|was|were|will|would|has|have|had)\b`,
-		Message: "Should be \"there $1\"",
-		Suggest: "there $1",
+		Pattern:     `\btheir\s+(is|are|was|were|will|would|has|have|had)\b`,
+		Message:     "Should be \"there $1\"",
+		Suggest:     "there $1",
+		Category:    "Confused words",
+		Explanation: "\"Their\" is a possessive and has to own something, as in \"their wallet\". A verb or a pronoun cannot follow it, so this needs \"there\".",
 	},
 	{
-		Pattern: `\btheir\s+(he|she|it|we|they|you)\b`,
-		Message: "Should be \"there $1\"",
-		Suggest: "there $1",
+		Pattern:     `\btheir\s+(he|she|it|we|they|you)\b`,
+		Message:     "Should be \"there $1\"",
+		Suggest:     "there $1",
+		Category:    "Confused words",
+		Explanation: "\"Their\" is a possessive and has to own something, as in \"their wallet\". A verb or a pronoun cannot follow it, so this needs \"there\".",
 	},
 	{
 		// its/it's needs to know what the sentence means, which is why the
@@ -301,8 +396,10 @@ var Rules = []GrammarRule{
 		// where the bare "going" is not.
 		Pattern: `\b([Ii])ts\s+(a|an|the|not|been|my|your|our|his|her|their|` +
 			`raining|snowing|too|going\s+to)\b`,
-		Message: "Should be \"$1t's $2\"",
-		Suggest: "$1t's $2",
+		Message:     "Should be \"$1t's $2\"",
+		Suggest:     "$1t's $2",
+		Category:    "Confused words",
+		Explanation: "\"Its\" is a possessive, as in \"its balance\". What follows here cannot be owned, so this is the contraction of \"it is\" and needs an apostrophe.",
 	},
 	// A rule for "its" before any -ing word was tried here and removed: it
 	// fired on "its funding", and English is full of -ing nouns -- funding,
@@ -311,20 +408,26 @@ var Rules = []GrammarRule{
 	// possessive can be followed by whatever the sentence.
 	{
 		// The mirror: "it's" is "it is", which cannot precede a noun it owns.
-		Pattern: `\b([Ii])t's\s+(own|owner)\b`,
-		Message: "Should be \"$1ts $2\"",
-		Suggest: "$1ts $2",
+		Pattern:     `\b([Ii])t's\s+(own|owner)\b`,
+		Message:     "Should be \"$1ts $2\"",
+		Suggest:     "$1ts $2",
+		Category:    "Confused words",
+		Explanation: "\"It's\" is short for \"it is\", which does not fit before a noun it owns. The possessive \"its\" has no apostrophe.",
 	},
 	{
 		// "there own" is never right: only the possessive can precede it.
-		Pattern: `\bthere\s+(own|self|selves)\b`,
-		Message: "Should be \"their $1\"",
-		Suggest: "their $1",
+		Pattern:     `\bthere\s+(own|self|selves)\b`,
+		Message:     "Should be \"their $1\"",
+		Suggest:     "their $1",
+		Category:    "Confused words",
+		Explanation: "\"There\" refers to a place or introduces a statement. Only the possessive \"their\" can precede this word.",
 	},
 	{
-		Pattern: `\bthere\s+(is|are|was|were)\s+own\b`,
-		Message: "Should be \"their own\"",
-		Suggest: "their own",
+		Pattern:     `\bthere\s+(is|are|was|were)\s+own\b`,
+		Message:     "Should be \"their own\"",
+		Suggest:     "their own",
+		Category:    "Confused words",
+		Explanation: "\"Own\" here belongs to someone, which takes the possessive \"their\" rather than \"there\".",
 	},
 
 	// --- style: flagged, but with no replacement proposed ---
@@ -335,30 +438,22 @@ var Rules = []GrammarRule{
 		// used: "!!!" collapses to "!", "???" to "?". A run of mixed marks
 		// deliberately does not match -- there is no single right answer for
 		// "!?!".
-		Pattern: `([!?])\1{2,}`,
-		Message: "Excessive punctuation",
-		Suggest: "$1",
+		Pattern:     `([!?])\1{2,}`,
+		Message:     "Excessive punctuation",
+		Suggest:     "$1",
+		Category:    "Style",
+		Explanation: "A run of exclamation or question marks adds emphasis in a way that reads as shouting. One mark carries the same meaning.",
 	},
 	// A "filler word" rule (very, really, quite, actually...) was tried here
 	// and removed: it fired on "he said quite clearly", which is correct
 	// writing. Whether an intensifier is filler depends on the sentence, so
 	// the rule cannot help but underline prose that is fine -- the exact
 	// failure the note at the top of this list warns about.
-	{
-		Pattern: `\b(in order to)\b`,
-		Message: "Wordy -- \"to\" usually suffices",
-		Suggest: "to",
-	},
-	{
-		Pattern: `\b(due to the fact that)\b`,
-		Message: "Wordy",
-		Suggest: "because",
-	},
-	{
-		Pattern: `\b(at this point in time)\b`,
-		Message: "Wordy",
-		Suggest: "now",
-	},
+	//
+	// Three wordiness rules also used to live here -- "in order to", "due to
+	// the fact that", "at this point in time". They moved to the table in
+	// rules_style.go with the eighty-odd others, and are marked as
+	// suggestions there rather than errors, which is what they always were.
 }
 
 // ParseWords tokenizes a generated wordlist: one lowercase word per line,

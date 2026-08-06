@@ -1,0 +1,200 @@
+# Glosses for the words WordNet does not contain.
+#
+# WordNet is organised as four networks -- nouns, verbs, adjectives, adverbs
+# -- and holds nothing else. Determiners, prepositions, conjunctions,
+# pronouns, auxiliaries and modals are absent by design, not by oversight:
+# they carry grammatical function rather than the kind of meaning a synonym
+# network is built to relate.
+#
+# That leaves a gap exactly where it is most visible. These are the commonest
+# words in English, so they are the ones a reader is most likely to select and
+# find nothing for, and "no definition for 'the'" reads as the feature being
+# broken rather than as a boundary of its data.
+#
+# Written by hand, and short on purpose: each says what the word does in a
+# sentence, because that is what these words have instead of a meaning.
+#
+# Format matches the generated files: word|pos:definition
+# Merged into definitions.txt by tools/mkdefs.
+
+# --- articles and determiners ---
+the|det:used before a noun to refer to something already known or being specified
+a|det:used before a noun to refer to one of something, not yet specified
+an|det:used before a noun beginning with a vowel sound, to refer to one of something
+this|det:refers to the thing near at hand or just mentioned
+that|det:refers to the thing further off or already mentioned
+these|det:refers to the things near at hand or just mentioned
+those|det:refers to the things further off or already mentioned
+each|det:every one of two or more, taken separately
+every|det:all of a group, taken one at a time
+some|det:an unspecified amount or number of something
+any|det:one or more, no matter which
+no|det:not one, not a single
+another|det:one more, or a different one
+both|det:the two together
+either|det:one or the other of two
+neither|det:not one and not the other of two
+much|det:a large amount of something uncountable
+many|det:a large number of countable things
+few|det:a small number of countable things
+several|det:more than two but not many
+enough|det:as much or as many as is needed
+such|det:of the kind already mentioned
+
+# --- pronouns ---
+i|pron:the speaker or writer, as the subject of a verb
+me|pron:the speaker or writer, as the object of a verb or preposition
+my|pron:belonging to the speaker or writer
+mine|pron:the one belonging to the speaker or writer
+myself|pron:the speaker or writer, where subject and object are the same
+you|pron:the person or people being addressed
+your|pron:belonging to the person being addressed
+yours|pron:the one belonging to the person being addressed
+yourself|pron:the person addressed, where subject and object are the same
+he|pron:a male person or animal already mentioned, as the subject of a verb
+him|pron:a male person or animal, as the object of a verb or preposition
+his|pron:belonging to a male person or animal already mentioned
+himself|pron:a male, where subject and object are the same
+she|pron:a female person or animal already mentioned, as the subject of a verb
+her|pron:a female, as the object of a verb, or belonging to her
+hers|pron:the one belonging to a female already mentioned
+herself|pron:a female, where subject and object are the same
+it|pron:a thing, animal or situation already mentioned
+its|pron:belonging to a thing or animal already mentioned
+itself|pron:a thing, where subject and object are the same
+we|pron:the speaker together with others, as the subject of a verb
+us|pron:the speaker together with others, as the object of a verb
+our|pron:belonging to the speaker and others
+ours|pron:the one belonging to the speaker and others
+ourselves|pron:the speaker and others, where subject and object are the same
+they|pron:people or things already mentioned, as the subject of a verb
+them|pron:people or things already mentioned, as the object of a verb
+their|pron:belonging to people or things already mentioned
+theirs|pron:the one belonging to people or things already mentioned
+themselves|pron:those already mentioned, where subject and object are the same
+who|pron:which person, or the person that
+whom|pron:which person, as the object of a verb or preposition
+whose|pron:belonging to which person
+what|pron:which thing, or the thing that
+which|pron:what one of a known set
+someone|pron:an unspecified person
+somebody|pron:an unspecified person
+something|pron:an unspecified thing
+anyone|pron:any person at all
+anybody|pron:any person at all
+anything|pron:any thing at all
+everyone|pron:every person
+everybody|pron:every person
+everything|pron:all things
+nobody|pron:not a single person
+nothing|pron:not a single thing
+none|pron:not any of them
+
+# --- prepositions ---
+of|prep:shows belonging, origin, or what something is made or composed of
+to|prep:shows direction towards, or introduces the basic form of a verb
+in|prep:inside, or within a period or area
+on|prep:touching and supported by a surface, or at a given time
+at|prep:marks an exact place or time
+by|prep:beside, or naming who or what did something
+for|prep:intended to go to, or showing purpose or duration
+with|prep:accompanied by, or using as a means
+from|prep:marks a starting point in place, time or origin
+about|prep:on the subject of, or approximately
+into|prep:to a position inside
+onto|prep:to a position on top of
+over|prep:above, or across the top of
+under|prep:below, or less than
+between|prep:in the space or interval separating two things
+among|prep:surrounded by, or in the company of several
+through|prep:in one side and out the other, or by means of
+during|prep:throughout the course of
+before|prep:earlier than, or in front of
+after|prep:later than, or behind
+against|prep:touching and pressing, or in opposition to
+across|prep:from one side to the other
+around|prep:surrounding, or roughly
+behind|prep:at the back of
+beside|prep:next to
+beyond|prep:further away than
+towards|prep:in the direction of
+toward|prep:in the direction of
+within|prep:inside the limits of
+without|prep:not having, or lacking
+along|prep:following the length of
+above|prep:higher than
+below|prep:lower than
+near|prep:close to
+per|prep:for each
+since|prep:from a past time until now
+until|prep:up to a given time
+till|prep:up to a given time
+upon|prep:on, in a more formal register
+despite|prep:in spite of
+
+# --- conjunctions ---
+and|conj:joins words or clauses of equal weight
+or|conj:offers an alternative
+but|conj:introduces something that contrasts with what came before
+nor|conj:and not either
+so|conj:introduces a result, or means to such an extent
+yet|conj:but even so
+if|conj:introduces a condition
+because|conj:for the reason that
+although|conj:in spite of the fact that
+though|conj:in spite of the fact that
+while|conj:during the time that, or whereas
+whereas|conj:by contrast with the fact that
+unless|conj:except if
+whether|conj:introduces a choice between alternatives
+than|conj:introduces the second part of a comparison
+as|conj:in the way that, or at the same time that
+once|conj:as soon as
+lest|conj:for fear that
+
+# --- auxiliaries and modals ---
+be|verb:exist, or link a subject to a description
+am|verb:the present form of "be" used with "I"
+is|verb:the present form of "be" used with a singular subject
+are|verb:the present form of "be" used with a plural subject or "you"
+was|verb:the past form of "be" used with a singular subject
+were|verb:the past form of "be" used with a plural subject or "you"
+been|verb:the past participle of "be"
+being|verb:the present participle of "be"
+have|verb:possess, or form a perfect tense with a past participle
+has|verb:the present form of "have" used with a singular subject
+had|verb:the past form of "have"
+having|verb:the present participle of "have"
+do|verb:perform an action, or form questions and negatives
+does|verb:the present form of "do" used with a singular subject
+did|verb:the past form of "do"
+done|verb:the past participle of "do"
+will|verb:marks the future, or expresses willingness
+would|verb:marks a hypothetical or polite form of "will"
+shall|verb:marks the future, chiefly with "I" and "we"
+should|verb:expresses obligation or expectation
+can|verb:expresses ability or permission
+could|verb:the past or hypothetical form of "can"
+may|verb:expresses possibility or permission
+might|verb:expresses a weaker possibility than "may"
+must|verb:expresses necessity or strong likelihood
+ought|verb:expresses duty or what is advisable
+
+# --- the commonest adverbs and particles WordNet also omits ---
+not|adv:makes a statement negative
+n't|adv:the shortened form of "not", attached to a verb
+too|adv:more than is wanted, or also
+very|adv:to a high degree
+just|adv:only, or very recently
+also|adv:in addition
+only|adv:and nothing more
+still|adv:continuing up to now
+already|adv:before now, or sooner than expected
+yes|adv:used to give an affirmative answer
+no|adv:used to give a negative answer
+here|adv:in or to this place
+there|adv:in or to that place, or introducing a statement
+when|adv:at what time, or at the time that
+where|adv:in what place, or in the place that
+why|adv:for what reason
+how|adv:in what way, or to what extent

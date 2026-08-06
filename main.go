@@ -1,12 +1,14 @@
 // Command bisonrelay-spellcheck-plugin is a Bison Relay dynamic-wasm plugin
 // providing two capabilities:
 //
-//   - spellcheck-data: a dictionary and a set of writing-style rules, handed
-//     over once when the plugin is enabled. Every match after that happens
-//     in the app; there is no per-keystroke work here.
-//   - thesaurus: synonyms for one word, answered on demand. This data stays
-//     in the plugin -- at 3.5MB it is far too much to push across for a
-//     feature used a word at a time.
+//   - spellcheck-data: a dictionary, a set of writing rules and a set of
+//     declared analysis checks, handed over once when the plugin is enabled.
+//     Every match and every count after that happens in the app; there is no
+//     per-keystroke work here.
+//   - thesaurus: synonyms and definitions for one word, answered on demand.
+//     This data stays in the plugin -- at 10MB it is far too much to push
+//     across for a feature used a word at a time. The word asked about is
+//     reduced to the base form the data is keyed by before it is searched.
 //
 // It is headless -- no nav item, no screens -- so beyond the `alloc` export
 // every plugin must provide, it implements only those two capabilities'
@@ -34,9 +36,9 @@ import (
 	"github.com/PhoenixGreen/bisonrelay-spellcheck-plugin/thesaurus"
 )
 
-// The two datasets are embedded compressed. Together they are 4.6MB of text,
-// which is most of the built module; gzipped they are 1.5MB, and the module
-// drops from 7.6MB to well under half that.
+// The datasets are embedded compressed. Together they are 11MB of text, which
+// is almost all of the built module; gzipped they are 3.6MB, and the module
+// drops to roughly a third of what it would otherwise be.
 //
 // This costs nothing at runtime that was not already being paid: //go:embed
 // puts the data in the module's linear memory either way, so the only
@@ -50,6 +52,16 @@ var commonGZ []byte
 
 //go:embed thesaurus.txt.gz
 var thesaurusGZ []byte
+
+//go:embed definitions.txt.gz
+var definitionsGZ []byte
+
+// The irregular forms WordNet's suffix rules cannot reach -- went/go,
+// children/child. 91KB, and the difference between a lookup answering for
+// two thirds of the dictionary and answering for a third of it.
+//
+//go:embed exceptions.txt.gz
+var exceptionsGZ []byte
 
 // gunzip decompresses an embedded dataset. A failure here means the module
 // was built wrong rather than that anything went wrong at runtime, so the
@@ -67,14 +79,15 @@ func gunzip(b []byte) string {
 	return string(out)
 }
 
-// thesaurusIndex is built on first use rather than at startup: a plugin
-// whose thesaurus is never consulted should not pay to scan 3.5MB, and the
-// host loads this module during client startup.
+// thesaurusIndex is built on first use rather than at startup: a plugin whose
+// thesaurus is never consulted should not pay to decompress and scan 10MB,
+// and the host loads this module during client startup.
 var thesaurusIndex *thesaurus.Index
 
 func lookupIndex() *thesaurus.Index {
 	if thesaurusIndex == nil {
-		thesaurusIndex = thesaurus.NewIndex(gunzip(thesaurusGZ))
+		thesaurusIndex = thesaurus.NewIndex(
+			gunzip(thesaurusGZ), gunzip(definitionsGZ), gunzip(exceptionsGZ))
 	}
 	return thesaurusIndex
 }
@@ -111,9 +124,10 @@ func writeResult(data []byte) uint64 {
 //go:wasmexport get_spellcheck_data
 func getSpellcheckData() uint64 {
 	b, err := json.Marshal(spellcheck.Data{
-		Words:        spellcheck.ParseWords(gunzip(wordsGZ)),
-		CommonWords:  spellcheck.ParseWords(gunzip(commonGZ)),
-		GrammarRules: spellcheck.Rules,
+		Words:          spellcheck.ParseWords(gunzip(wordsGZ)),
+		CommonWords:    spellcheck.ParseWords(gunzip(commonGZ)),
+		GrammarRules:   spellcheck.Rules,
+		AnalysisChecks: spellcheck.AnalysisChecks,
 	})
 	if err != nil {
 		// Returning zero bytes is how this ABI says "I could not answer";
@@ -123,6 +137,11 @@ func getSpellcheckData() uint64 {
 	return writeResult(b)
 }
 
+// lookupSynonyms answers the thesaurus capability. The export keeps its
+// original name: renaming it would break every host already asking for it,
+// and the capability, not the export, is what the contract is written
+// against.
+//
 //go:wasmexport lookup_synonyms
 func lookupSynonyms(word string) uint64 {
 	entry, ok := lookupIndex().Lookup(word)
