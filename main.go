@@ -1,4 +1,4 @@
-// Command bisonrelay-spellcheck-plugin is a Bison Relay dynamic-wasm plugin
+// Command bisonrelay-writing-tools-plugin is a Bison Relay dynamic-wasm plugin
 // providing two capabilities:
 //
 //   - spellcheck-data: a dictionary, a set of writing rules and a set of
@@ -32,8 +32,8 @@ import (
 
 	"unsafe"
 
-	"github.com/PhoenixGreen/bisonrelay-spellcheck-plugin/spellcheck"
-	"github.com/PhoenixGreen/bisonrelay-spellcheck-plugin/thesaurus"
+	"github.com/PhoenixGreen/bisonrelay-writing-tools-plugin/spellcheck"
+	"github.com/PhoenixGreen/bisonrelay-writing-tools-plugin/thesaurus"
 )
 
 // The datasets are embedded compressed. Together they are 11MB of text, which

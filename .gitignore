@@ -1,5 +1,5 @@
 plugin.wasm
-spellcheck-plugin-v*.zip
+writing-tools-plugin-v*.zip
 
 # The datasets are embedded compressed; only the .gz files are committed.
 # Keeping the plain text alongside them would be the same data twice, free to

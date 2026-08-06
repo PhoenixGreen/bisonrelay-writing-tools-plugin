@@ -1,3 +1,3 @@
-module github.com/PhoenixGreen/bisonrelay-spellcheck-plugin
+module github.com/PhoenixGreen/bisonrelay-writing-tools-plugin
 
 go 1.24

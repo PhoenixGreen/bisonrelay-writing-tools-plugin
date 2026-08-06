@@ -1,4 +1,8 @@
-# bisonrelay-spellcheck-plugin
+# bisonrelay-writing-tools-plugin
+
+Formerly `bisonrelay-spellcheck-plugin`. The manifest id is still `spellcheck`,
+which is what Bison Relay tracks an installed plugin by; changing it would orphan
+an existing install for no gain.
 
 A spell/writing-style-check data plugin for [Bison Relay](https://bisonrelay.org), built
 against its dynamic-wasm plugin system (`client/pluginmgr` + `client/pluginmgr/wasmhost` in
@@ -185,12 +189,12 @@ Requires Go 1.24+ (for `go:wasmexport`) -- no TinyGo, no cgo.
 ## Packaging for import
 
 ```sh
-./package.sh    # -> spellcheck-plugin-vX.Y.Z.zip (manifest.json + plugin.wasm)
+./package.sh    # -> writing-tools-plugin-vX.Y.Z.zip (manifest.json + plugin.wasm)
 ```
 
 ## Installing in Bison Relay
 
-Grab `spellcheck-plugin-vX.Y.Z.zip` from the [Releases](../../releases) page (or build it
+Grab `writing-tools-plugin-vX.Y.Z.zip` from the [Releases](../../releases) page (or build it
 yourself with `./package.sh`) -- import it as-is, no need to unzip it first.
 
 In Bison Relay: Settings > Plugins > Import Plugin, then select the zip. This plugin ships

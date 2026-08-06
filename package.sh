@@ -12,7 +12,7 @@ version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' manifest.json | head -1)
 # their own "id"/"version"-like fields, this pattern would match those too,
 # not just the top-level plugin id/version.
 id=$(sed -n 's/.*"id": *"\([^"]*\)".*/\1/p' manifest.json | head -1)
-outfile="spellcheck-plugin-v${version}.zip"
+outfile="writing-tools-plugin-v${version}.zip"
 
 stagedir=$(mktemp -d)
 trap 'rm -rf "$stagedir"' EXIT
