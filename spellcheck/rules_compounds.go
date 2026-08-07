@@ -1,0 +1,176 @@
+package spellcheck
+
+// rules_compounds.go catches words written as two.
+//
+// These need a rule rather than the dictionary, and that is the whole point
+// of the file: "my self" is two perfectly good words, so no wordlist can
+// object to it however large. Only something that looks at the pair can.
+//
+// The risk runs the other way from most of this plugin's rules. There is no
+// question that the joined form is a word -- the danger is that the split
+// form is *also* a phrase somewhere, so each rule below is either a pair
+// that has no valid reading apart, or is guarded against the readings it
+// does have.
+
+const explainCompound = "This is one word. Written as two it means " +
+	"something else, or nothing at all."
+
+var compoundRules = []GrammarRule{
+	// --- the -self family ---
+	// The lookahead is what keeps these off "my self-esteem", where "self"
+	// is the start of a hyphenated word and the split is not a mistake.
+	//
+	// An adjective between the two -- "my true self", "her better self" --
+	// does not match either, which is what makes the bare pair safe to
+	// correct: "my self" with nothing in between is not a phrase anybody
+	// writes on purpose.
+	{
+		Pattern:     `\b([Mm])y\s+self\b(?!-)`,
+		Message:     "Should be \"$1yself\"",
+		Suggest:     "$1yself",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Yy])our\s+self\b(?!-)`,
+		Message:     "Should be \"$1ourself\"",
+		Suggest:     "$1ourself",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Hh])im\s+self\b(?!-)`,
+		Message:     "Should be \"$1imself\"",
+		Suggest:     "$1imself",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Hh])er\s+self\b(?!-)`,
+		Message:     "Should be \"$1erself\"",
+		Suggest:     "$1erself",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Ii])t\s+self\b(?!-)`,
+		Message:     "Should be \"$1tself\"",
+		Suggest:     "$1tself",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Oo])ur\s+selves\b`,
+		Message:     "Should be \"$1urselves\"",
+		Suggest:     "$1urselves",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Tt])hem\s+selves\b`,
+		Message:     "Should be \"$1hemselves\"",
+		Suggest:     "$1hemselves",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Yy])our\s+selves\b`,
+		Message:     "Should be \"$1ourselves\"",
+		Suggest:     "$1ourselves",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+
+	// --- any/some/every + where ---
+	// "No where" is here and "no thing" is not: the first has no reading as
+	// two words, while the second is a real if uncommon philosophical usage.
+	{
+		Pattern:     `\b([Aa])ny\s+where\b`,
+		Message:     "Should be \"$1nywhere\"",
+		Suggest:     "$1nywhere",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Ss])ome\s+where\b`,
+		Message:     "Should be \"$1omewhere\"",
+		Suggest:     "$1omewhere",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Ee])very\s+where\b`,
+		Message:     "Should be \"$1verywhere\"",
+		Suggest:     "$1verywhere",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Nn])o\s+where\b`,
+		Message:     "Should be \"$1owhere\"",
+		Suggest:     "$1owhere",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+
+	// --- any/some/every + thing ---
+	// "Every body" is deliberately absent: a body is a thing that can be
+	// counted, and "every body in the room" is correct writing.
+	{
+		Pattern:     `\b([Aa])ny\s+thing\b`,
+		Message:     "Should be \"$1nything\"",
+		Suggest:     "$1nything",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Ss])ome\s+thing\b`,
+		Message:     "Should be \"$1omething\"",
+		Suggest:     "$1omething",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Ee])very\s+thing\b`,
+		Message:     "Should be \"$1verything\"",
+		Suggest:     "$1verything",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+
+	// --- the rest, each guarded against the phrase it collides with ---
+	{
+		// "with out of date information" is the one real reading of the pair,
+		// and the only one this has to stay clear of.
+		Pattern:     `\b([Ww])ith\s+out\b(?!\s+of\b)`,
+		Message:     "Should be \"$1ithout\"",
+		Suggest:     "$1ithout",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		// "would be cause for concern" is correct, and common enough to be
+		// worth the guard.
+		Pattern:     `\b([Bb])e\s+cause\b(?!\s+(for|of)\b)`,
+		Message:     "Should be \"$1ecause\"",
+		Suggest:     "$1ecause",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		// "in side" is absent, unlike this one: "parked in side streets" is
+		// ordinary English and "the way out side" is not.
+		Pattern:     `\b([Oo])ut\s+side\b`,
+		Message:     "Should be \"$1utside\"",
+		Suggest:     "$1utside",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		Pattern:     `\b([Aa])\s+part\s+from\b`,
+		Message:     "Should be \"$1part from\"",
+		Suggest:     "$1part from",
+		Category:    "Grammar",
+		Explanation: "\"Apart from\" means except for. \"A part\" is a piece of something.",
+	},
+}

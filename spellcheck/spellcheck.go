@@ -102,14 +102,23 @@ const domainTLDs = "com|org|net|edu|gov|mil|int|io|dev|app|xyz|info|biz|tv|" +
 	"tech|site|online|store|blog|news|wiki|link|page|pro|me|co|gl|fm"
 
 // Rules are every writing check, in the order they are applied: the errors
-// below, then the confusable pairs in rules_confusions.go, then the opinions
-// in rules_style.go.
+// below, then the confusable pairs in rules_confusions.go, the words written
+// as two in rules_compounds.go, the comma rules in rules_punctuation.go, and
+// finally the opinions in rules_style.go.
 //
 // Only the first two groups fire on text that is wrong whatever the writer
 // meant. The third is marked SeveritySuggestion and holds to a different
 // standard -- see the note at the top of rules_style.go.
-var Rules = append(append(append([]GrammarRule{}, errorRules...),
-	confusionRules...), styleRules...)
+var Rules = concat(errorRules, confusionRules, compoundRules,
+	punctuationRules, styleRules)
+
+func concat(groups ...[]GrammarRule) []GrammarRule {
+	var all []GrammarRule
+	for _, group := range groups {
+		all = append(all, group...)
+	}
+	return all
+}
 
 // errorRules are the checks that fire only on text that is wrong.
 //

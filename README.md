@@ -72,6 +72,28 @@ A typographic apostrophe is folded to a plain one before any lookup. A text fiel
 substitutes U+2019 as you type -- which macOS does by default -- otherwise makes every
 contraction unfindable, since the data is keyed with the plain form.
 
+**Words written as two.** 21 rules for compounds split in half -- "my self", "some where",
+"with out", "them selves". These need a rule rather than the dictionary, and that is the whole
+point of them: "my self" is two perfectly good words, so no wordlist can object to it however
+large. The risk runs the other way from most rules here -- the danger is that the split form
+is *also* a phrase somewhere -- so each is either a pair with no valid reading apart, or is
+guarded against the reading it has. "My self-esteem", "every body in the room", "would be
+cause for concern" and "parked in side streets" are all in the corpus for that reason.
+
+**Commas and the marks around them.** Most of what people mean by "check my commas" is not
+decidable by pattern matching. Whether a clause is restrictive, whether two halves of a
+sentence are independent, whether a list wants a serial comma -- each needs to know what the
+sentence *is*, not what it looks like. Comma splices in particular are indistinguishable from
+a correctly punctuated introductory phrase, which is why they are absent.
+
+What is decidable is a comma's own position: against a full stop, inside a bracket it does
+not belong to, run into the quote after it. Plus the one missing comma that is not a
+judgement call -- after a conjunctive adverb opening a sentence, where no other reading
+exists. "However" and "Similarly" are deliberately excluded from that list, because "However
+you do it, it works" and "Similarly designed products failed" are both correct and both would
+be broken by a comma. Numbers run through all of it: "1,000", "3:00" and "v1.2.3" are correct
+and common, so every rule is written to leave them alone.
+
 **Confusable pairs.** 33 rules covering then/than, lose/loose, affect/effect, your/you're,
 to/too, whose/who's, their/they're and the past participles after have/has/had. LanguageTool
 decides the general case with ngram frequency data -- given "more money then you", it knows

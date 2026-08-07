@@ -173,11 +173,42 @@ var correctText = []string{
 	"Thanks for the advice about routing.",
 	"Bear with me while I sync.",
 	"That was a part of the original design.",
+
+	// The split-compound rules. Each of these is the reading that keeps a
+	// pair of words apart, and each one cost a rule its guard.
+	"My self-esteem took a knock.",
+	"Her self-control is remarkable.",
+	"I like my true self better.",
+	"Every body in the room turned around.",
+	"That would be cause for concern.",
+	"Interest is charged on the whole amount, be cause for celebration or not.",
+	"We parked in side streets all week.",
+	"It came with out-of-date firmware.",
+	"There is a part of this I still do not follow.",
+
+	// Punctuation. Numbers are the trap that runs through all of it.
+	"It cost 1,000 DCR at 3:00 on 3.5 percent.",
+	"The file is at v1.2.3, not v1.2.4.",
+	"No one knows the answer yet.",
+	"No longer a problem.",
+	"Yes and no, depending.",
+	"However you do it, the result is the same.",
+	"Similarly designed products failed the same way.",
+	"For example sentences, see the appendix.",
+	"Wait for it... there it is.",
+	"She said, \"that works for me\".",
+	"Therefore, we should wait.",
+	"Meanwhile, the others kept going.",
+	"I went but he stayed.",
 }
 
-// TestRulesDoNotFireOnCorrectText is the false-positive guard. A wavy
-// underline under correct writing is worse than a missed error, because it
-// teaches people to stop reading the underlines at all.
+// TestRulesDoNotFireOnCorrectText is the false-positive guard, and it is the
+// most valuable test here. A wavy underline under correct writing is worse
+// than a missed error, because it teaches people to stop reading the
+// underlines at all.
+//
+// It covers the error rules. The suggestions are held to a different
+// standard on purpose -- see the note at the top of rules_style.go.
 //
 // Rules using backreferences are skipped: they are written in Dart's dialect
 // and Go's RE2 cannot compile them by design. Those are covered by the app's
@@ -185,8 +216,24 @@ var correctText = []string{
 func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 	skipped := 0
 	for _, r := range Rules {
+		// Errors only. A suggestion is an opinion about writing that is not
+		// wrong -- that is what the severity means -- so holding one to this
+		// standard would mean no sentence in the corpus below could contain
+		// a cliche, a wordy phrase or a missing optional comma. The corpus
+		// is meant to be ordinary writing, and ordinary writing contains all
+		// three.
+		if r.Severity == SeveritySuggestion {
+			continue
+		}
 		re, err := regexp.Compile(r.Pattern)
 		if err != nil {
+			// RE2 rejects it. That is expected for the constructs Dart has
+			// and Go does not -- but only for those, so the reason is
+			// checked rather than counted.
+			if !usesDartOnlySyntax(r.Pattern) {
+				t.Errorf("rule %q does not compile and uses nothing Dart-only: %v",
+					r.Message, err)
+			}
 			skipped++
 			continue
 		}
@@ -197,16 +244,21 @@ func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 			}
 		}
 	}
-	// Eight rules are beyond RE2 by design: three use backreferences
-	// (repeated word, repeated punctuation, excessive punctuation) and five
-	// use lookarounds (sentence capital, missing space, the "I" pronoun, "me
-	// to" at the end of a sentence, and "in principal" at the end of a
-	// clause). They are written in Dart's dialect and are covered by the
-	// app's tests, where they actually run.
-	if skipped > 8 {
-		t.Errorf("%d rules could not be compiled by RE2; expected only the "+
-			"backreference and lookaround ones", skipped)
-	}
+	// Every skip is accounted for above rather than counted here. A count
+	// was a magic number that had to be raised each time a lookaround rule
+	// was added, and raising it is exactly the moment nobody checks what
+	// else slipped past -- a pattern with a genuine typo in it would have
+	// been waved through as one more expected skip.
+	t.Logf("%d of %d rules are beyond RE2 and are covered app-side, where "+
+		"they run", skipped, len(Rules))
+}
+
+// dartOnlySyntax is the constructs Dart's regex engine has and Go's RE2 does
+// not, by design: RE2 guarantees linear time and neither can be done in it.
+var dartOnlySyntax = regexp.MustCompile(`\(\?<?[=!]|\\[1-9]`)
+
+func usesDartOnlySyntax(pattern string) bool {
+	return dartOnlySyntax.MatchString(pattern)
 }
 
 // TestRulesCatchTheirOwnMistake pairs each compilable rule with text it is
