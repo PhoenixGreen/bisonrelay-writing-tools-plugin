@@ -26,6 +26,22 @@ const explainAgreement = "The verb has to match its subject in number: " +
 // subject is correct rather than mistaken -- "if I were you", "I wish it
 // were simpler". English keeps the subjunctive alive almost entirely in
 // these frames, which is what makes them listable.
+// afterPreposition is the reading both pronoun rules below get wrong on
+// their own, and it is the same trap the quantifier rule was written to
+// climb over.
+//
+// "It" and "you" are object forms as well as subject ones, so a preposition
+// in front of one takes it out of the running entirely: in "a photo of you
+// was on the wall" and "some parts of it were exciting" the verb belongs to
+// a noun further back, and both sentences are correct. Without this the two
+// rules argue with each other -- fixing "some parts of it was" produces
+// "some parts of it were", which the second rule then offers to change back.
+//
+// "I", "he", "she", "we" and "they" need no such guard: they are subject
+// forms only, and "of he" is not English.
+const afterPreposition = `(of|for|with|to|about|from|at|on|in|by|near|like|` +
+	`between|beside|without|against|among|behind|beyond)\s+`
+
 const subjunctives = `([Ii]f|[Ww]hether|[Tt]hough|[Aa]s|[Oo]nly|[Rr]ather|` +
 	`[Ww]ish|[Ww]ishes|[Ww]ished|[Ss]uppose|[Ii]magine)\s+` +
 	`([Ii]|[Hh]e|[Ss]he|[Ii]t)\s+were\b`
@@ -46,13 +62,19 @@ var agreementRules = []GrammarRule{
 		// A personal pronoun cannot be anything but the subject, so this
 		// needs no idea what the sentence is about. There is no subjunctive
 		// counterpart to worry about either: "if we was" is still wrong.
-		Pattern: `\b([Ww]e|[Tt]hey|[Yy]ou)\s+was\b`,
+		Pattern:      `\b([Ww]e|[Tt]hey|[Yy]ou)\s+was\b`,
+		Antipatterns: []string{`\b` + afterPreposition + `you\s+was\b`},
 		Flags: []string{
 			"because we was both bored",
 			"They was late again",
 			"you was right about it",
 		},
-		Leaves:      []string{"we were both bored", "he was late again"},
+		Leaves: []string{
+			"we were both bored",
+			"he was late again",
+			// "You" is an object here, so the verb belongs to "photo".
+			"a photo of you was on the wall",
+		},
 		Message:     "Should be \"$1 were\"",
 		Suggest:     "$1 were",
 		Category:    "Grammar",
@@ -63,14 +85,21 @@ var agreementRules = []GrammarRule{
 		// singular pronoun is the subjunctive as often as it is a mistake,
 		// and the subjunctive is correct: "if I were you" is not an error to
 		// be fixed.
-		Pattern:      `\b([Ii]|[Hh]e|[Ss]he|[Ii]t)\s+were\b`,
-		Antipatterns: []string{subjunctives},
-		Flags:        []string{"he were already waiting", "I were late"},
+		Pattern: `\b([Ii]|[Hh]e|[Ss]he|[Ii]t)\s+were\b`,
+		Antipatterns: []string{
+			subjunctives,
+			`\b` + afterPreposition + `it\s+were\b`,
+		},
+		Flags: []string{"he were already waiting", "I were late"},
 		Leaves: []string{
 			"if I were you I would wait",
 			"I wish it were simpler",
 			"she asked whether it were possible",
 			"as it were, nobody minded",
+			// The sentence the quantifier rule produces. Without the guard
+			// these two rules undo each other's work.
+			"some parts of it were exciting",
+			"a few of it were missing",
 		},
 		Message:     "Should be \"$1 was\"",
 		Suggest:     "$1 was",

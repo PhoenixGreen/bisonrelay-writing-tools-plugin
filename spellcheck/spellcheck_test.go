@@ -126,6 +126,12 @@ var correctText = []string{
 	"We use it to open the door, and I suppose to err is human.",
 	"He was supposed to call, and we used to meet on Fridays.",
 	"I can hardly wait, and we could hardly move.",
+	// The reading that made the two pronoun rules argue with each other:
+	// fixing the first sentence produces the second, which the other rule
+	// then offered to change straight back.
+	"Some parts of it were exciting, and a photo of you was on the wall.",
+	"A box of chocolates was on the table and both of the answers were right.",
+	"Neither of us was ready, and each of them was tested.",
 	"see docs.rs and news.ycombinator.com for details",
 	// its/it's used correctly, which the new rules must not touch.
 	"The channel lost its funding, and it's closed now.",

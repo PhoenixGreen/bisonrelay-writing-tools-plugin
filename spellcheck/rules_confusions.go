@@ -172,8 +172,43 @@ var confusionRules = []GrammarRule{
 		Explanation: explainYourYoure,
 	},
 	{
+		// "Your on my list." A possessive owns the noun after it, and a
+		// preposition or an adverb is not a noun -- there is nothing for
+		// "your" to own.
+		//
+		// The hyphen guard is what makes this safe. English is full of
+		// attributive compounds built from exactly these words -- your
+		// in-tray, your on-call rota, your out-of-office reply -- and in
+		// every one of them the possessive is correct and the word after it
+		// is only the first half of an adjective.
+		//
+		// Words that can begin an ordinary noun phrase are left out for the
+		// same reason: "your only friend", "your very own", "your just
+		// reward" and "your really good idea" are all correct.
+		Pattern: `\b([yY])our\s+(on|in|at|off|out|here|there|not|always|` +
+			`never|already|about\s+to|going\s+to)\b`,
+		Antipatterns: []string{`[yY]our\s+(on|in|at|off|out)-`},
+		Flags: []string{
+			"Your on my list",
+			"your not ready yet",
+			"your going to need an umbrella",
+			"your always late",
+		},
+		Leaves: []string{
+			"you're on my list",
+			"check your in-tray",
+			"your on-call rota is here",
+			"your only friend is waiting",
+			"it was your very own idea",
+		},
+		Message:     "Should be \"$1ou're $2\"",
+		Suggest:     "$1ou're $2",
+		Category:    "Confused words",
+		Explanation: explainYourYoure,
+	},
+	{
 		// The mirror: "you are" cannot own a noun.
-		Pattern:     `\b[yY]ou're\s+(own|car|house|turn|fault|money|wallet|keys|help|name|job)\b`,
+		Pattern:     `\b[yY]ou're\s+(own|car|house|turn|fault|money|wallet|keys|help|name|job|passport|ticket|order|account|address|password|email|phone|bag|coat|seat|room|turn)\b`,
 		Flags:       []string{"that is you're own fault"},
 		Message:     "Should be \"your $1\"",
 		Suggest:     "your $1",
