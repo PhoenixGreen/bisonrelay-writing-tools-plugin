@@ -55,6 +55,17 @@ would have caught it had been skipping the rule for the same reason.
 Antipatterns suppress and cannot create: a rule that needs *context* to fire still says so
 in its pattern.
 
+Every rule also carries its own **examples** -- text it must catch, and text it must not --
+and `TestRuleExamples` runs all 265 of them. They are attached to the rule rather than kept
+in a list somewhere else, because the failure this plugin actually suffers is not a missing
+rule: it is a rule that was wrong from the day it was written and went unnoticed for weeks.
+Three of those turned up in a single afternoon of real use. Each would have failed here the
+moment it was typed, and named the rule rather than a line of shared corpus.
+
+They never reach the host. `json:"-"`, with a test that says so -- this is how a rule is
+developed, not what it does, and sending it would put a test fixture on the capability's
+contract where it would have to be reviewed and versioned like a feature.
+
 Each rule carries a category and an explanation as well as a message and a replacement.
 The message names the problem in the few words a menu row allows; the explanation is a
 sentence saying what is wrong and *why*, which is the whole reason the app shows a popup

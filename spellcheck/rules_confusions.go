@@ -52,6 +52,8 @@ var confusionRules = []GrammarRule{
 		Pattern: `\b(more|less|better|worse|bigger|smaller|larger|higher|` +
 			`lower|faster|slower|greater|fewer|older|younger|longer|shorter|` +
 			`cheaper|easier|harder|rather|other)\s+then\b`,
+		Flags:       []string{"this is better then that"},
+		Leaves:      []string{"better than that"},
 		Message:     "Should be \"$1 than\"",
 		Suggest:     "$1 than",
 		Category:    "Confused words",
@@ -60,6 +62,8 @@ var confusionRules = []GrammarRule{
 	{
 		// The mirror. A conjunction cannot be followed by a comparison.
 		Pattern:     `\b(and|but|so|back|since|right|only|way)\s+than\b`,
+		Flags:       []string{"we synced and than sent it"},
+		Leaves:      []string{"we synced and then sent it"},
 		Message:     "Should be \"$1 then\"",
 		Suggest:     "$1 then",
 		Category:    "Confused words",
@@ -71,6 +75,7 @@ var confusionRules = []GrammarRule{
 		// "Loosing" is not a word anyone means: the verb "to loose" exists
 		// but its participle is vanishingly rare beside the typo.
 		Pattern:     `\bloosing\b`,
+		Flags:       []string{"we are loosing peers"},
 		Message:     "Should be \"losing\"",
 		Suggest:     "losing",
 		Category:    "Confused words",
@@ -81,6 +86,8 @@ var confusionRules = []GrammarRule{
 		// after "loose" means the verb was meant.
 		Pattern: `\bloose\s+(the|a|an|my|your|his|her|our|their|it|them|` +
 			`money|weight|control|track|interest|everything|access)\b`,
+		Flags:       []string{"do not loose the keys"},
+		Leaves:      []string{"the screw is loose here"},
 		Message:     "Should be \"lose $1\"",
 		Suggest:     "lose $1",
 		Category:    "Confused words",
@@ -89,6 +96,7 @@ var confusionRules = []GrammarRule{
 	{
 		// A modal or "to" forces the verb.
 		Pattern:     `\b(will|would|can|could|might|may|to|don't|didn't|doesn't)\s+loose\b`,
+		Flags:       []string{"you will loose it"},
 		Message:     "Should be \"$1 lose\"",
 		Suggest:     "$1 lose",
 		Category:    "Confused words",
@@ -105,6 +113,8 @@ var confusionRules = []GrammarRule{
 		// determiner through unchanged hands back a phrase that is still
 		// wrong, and this one did.
 		Pattern:     `\b(the|this|that|any|no|side|net|little|great|whose)\s+affect\b`,
+		Flags:       []string{"it had no affect"},
+		Leaves:      []string{"it had no effect"},
 		Message:     "Should be \"$1 effect\"",
 		Suggest:     "$1 effect",
 		Category:    "Confused words",
@@ -114,6 +124,7 @@ var confusionRules = []GrammarRule{
 		// Both "a affect" and "an affect" become "an effect": the vowel is
 		// what decides, and after the correction there is one.
 		Pattern:     `\b([Aa])n?\s+affect\b`,
+		Flags:       []string{"it had a affect", "it had an affect"},
 		Message:     "Should be \"$1n effect\"",
 		Suggest:     "$1n effect",
 		Category:    "Confused words",
@@ -121,6 +132,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(the|these|those|its|side|any|no)\s+affects\b`,
+		Flags:       []string{"the affects were clear"},
 		Message:     "Should be \"$1 effects\"",
 		Suggest:     "$1 effects",
 		Category:    "Confused words",
@@ -132,6 +144,8 @@ var confusionRules = []GrammarRule{
 		// why the object is matched too.
 		Pattern: `\b(will|would|can|could|might|may|does|doesn't|didn't)\s+` +
 			`effect\s+(the|a|an|my|your|his|her|our|their|you|me|us|them|him|it)\b`,
+		Flags:       []string{"it will effect the outcome"},
+		Leaves:      []string{"it will effect change across the network"},
 		Message:     "Should be \"$1 affect $2\"",
 		Suggest:     "$1 affect $2",
 		Category:    "Confused words",
@@ -150,6 +164,8 @@ var confusionRules = []GrammarRule{
 		// "Your welcome" is caught by its own rule among the error checks,
 		// which predates this one.
 		Pattern:     `\byour\s+(kidding|joking|probably|definitely)\b`,
+		Flags:       []string{"your kidding me"},
+		Leaves:      []string{"it is your right to refuse"},
 		Message:     "Should be \"you're $1\"",
 		Suggest:     "you're $1",
 		Category:    "Confused words",
@@ -158,6 +174,7 @@ var confusionRules = []GrammarRule{
 	{
 		// The mirror: "you are" cannot own a noun.
 		Pattern:     `\byou're\s+(own|car|house|turn|fault|money|wallet|keys|help|name|job)\b`,
+		Flags:       []string{"that is you're own fault"},
 		Message:     "Should be \"your $1\"",
 		Suggest:     "your $1",
 		Category:    "Confused words",
@@ -169,10 +186,21 @@ var confusionRules = []GrammarRule{
 		// The leading verb or intensifier is matched as well as the adjective
 		// after it, because "to" before an adjective is fine on its own --
 		// "spoke to many people", "went to great lengths".
+		//
+		// The adjectives are listed rather than matched loosely, and the
+		// list is the whole rule. "High" was missing until an example asked
+		// for it, which is about as common as this mistake gets. Words that
+		// are also verbs stay out: "the plan is to close the door" and "the
+		// aim is to narrow the gap" are correct writing that "close" or
+		// "narrow" in this list would flag.
 		Pattern: `\b(is|are|was|were|be|been|it's|that's|feel|feels|felt|` +
 			`seems|looks|way|far)\s+to\s+(much|many|late|early|big|small|` +
 			`hard|easy|expensive|long|short|slow|fast|good|bad|old|young|` +
-			`heavy|light|loud|quiet|soon|often)\b`,
+			`heavy|light|loud|quiet|soon|often|high|low|hot|cold|busy|` +
+			`tired|strong|weak|wide|deep|thin|thick|dark|bright|complex|` +
+			`simple|risky|similar|different)\b`,
+		Flags:       []string{"the fee is to high"},
+		Leaves:      []string{"i spoke to many people about it"},
 		Message:     "Should be \"$1 too $2\"",
 		Suggest:     "$1 too $2",
 		Category:    "Confused words",
@@ -183,6 +211,8 @@ var confusionRules = []GrammarRule{
 		// the other reading: a "to" with something after it is the
 		// preposition doing its job.
 		Pattern:      `\b(me|him|her|us|them)\s+to\b`,
+		Flags:        []string{"send it to me to."},
+		Leaves:       []string{"send it to me to review"},
 		Antipatterns: []string{`\b(me|him|her|us|them)\s+to\s+\S`},
 		Message:      "Should be \"$1 too\"",
 		Suggest:      "$1 too",
@@ -193,6 +223,7 @@ var confusionRules = []GrammarRule{
 	// --- their / they're ---
 	{
 		Pattern:     `\bthey're\s+(own|car|house|turn|fault|money|keys|wallet|names)\b`,
+		Flags:       []string{"they're own fault"},
 		Message:     "Should be \"their $1\"",
 		Suggest:     "their $1",
 		Category:    "Confused words",
@@ -203,6 +234,8 @@ var confusionRules = []GrammarRule{
 	{
 		Pattern: `\bwhose\s+(going|coming|been|gone|got|getting|ready|next|` +
 			`there|here|right|wrong|that|this)\b`,
+		Flags:       []string{"whose going to test it"},
+		Leaves:      []string{"whose keys are these"},
 		Message:     "Should be \"who's $1\"",
 		Suggest:     "who's $1",
 		Category:    "Confused words",
@@ -210,6 +243,8 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bwho's\s+(turn|fault|idea|name|car|house|job|book|keys|phone)\b`,
+		Flags:       []string{"who's turn is it"},
+		Leaves:      []string{"who's going to review it"},
 		Message:     "Should be \"whose $1\"",
 		Suggest:     "whose $1",
 		Category:    "Confused words",
@@ -221,6 +256,8 @@ var confusionRules = []GrammarRule{
 	// auxiliary, whatever the sentence is about.
 	{
 		Pattern:     `\b(have|has|had|having)\s+went\b`,
+		Flags:       []string{"they have went home"},
+		Leaves:      []string{"they have gone home"},
 		Message:     "Should be \"$1 gone\"",
 		Suggest:     "$1 gone",
 		Category:    "Grammar",
@@ -228,6 +265,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+came\b`,
+		Flags:       []string{"they have came back"},
 		Message:     "Should be \"$1 come\"",
 		Suggest:     "$1 come",
 		Category:    "Grammar",
@@ -235,6 +273,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+saw\b`,
+		Flags:       []string{"i have saw it"},
 		Message:     "Should be \"$1 seen\"",
 		Suggest:     "$1 seen",
 		Category:    "Grammar",
@@ -242,6 +281,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+did\b`,
+		Flags:       []string{"i have did that"},
 		Message:     "Should be \"$1 done\"",
 		Suggest:     "$1 done",
 		Category:    "Grammar",
@@ -249,6 +289,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+wrote\b`,
+		Flags:       []string{"i have wrote the post"},
 		Message:     "Should be \"$1 written\"",
 		Suggest:     "$1 written",
 		Category:    "Grammar",
@@ -256,6 +297,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+took\b`,
+		Flags:       []string{"i have took it"},
 		Message:     "Should be \"$1 taken\"",
 		Suggest:     "$1 taken",
 		Category:    "Grammar",
@@ -263,6 +305,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+gave\b`,
+		Flags:       []string{"i have gave it"},
 		Message:     "Should be \"$1 given\"",
 		Suggest:     "$1 given",
 		Category:    "Grammar",
@@ -270,6 +313,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+broke\b`,
+		Flags:       []string{"i have broke it"},
 		Message:     "Should be \"$1 broken\"",
 		Suggest:     "$1 broken",
 		Category:    "Grammar",
@@ -277,6 +321,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+spoke\b`,
+		Flags:       []string{"i have spoke to them"},
 		Message:     "Should be \"$1 spoken\"",
 		Suggest:     "$1 spoken",
 		Category:    "Grammar",
@@ -284,6 +329,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+chose\b`,
+		Flags:       []string{"i have chose one"},
 		Message:     "Should be \"$1 chosen\"",
 		Suggest:     "$1 chosen",
 		Category:    "Grammar",
@@ -291,6 +337,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(have|has|had|having)\s+drank\b`,
+		Flags:       []string{"i have drank it"},
 		Message:     "Should be \"$1 drunk\"",
 		Suggest:     "$1 drunk",
 		Category:    "Grammar",
@@ -300,6 +347,7 @@ var confusionRules = []GrammarRule{
 		// "Has lead to" is the commonest of these by a distance, because
 		// "lead" the metal is spelled like the past tense sounds.
 		Pattern:     `\b(have|has|had|having)\s+lead\s+to\b`,
+		Flags:       []string{"that has lead to problems"},
 		Message:     "Should be \"$1 led to\"",
 		Suggest:     "$1 led to",
 		Category:    "Grammar",
@@ -309,6 +357,8 @@ var confusionRules = []GrammarRule{
 	// --- phrases that are simply not the phrase ---
 	{
 		Pattern:  `\bapart\s+of\s+(the|a|an|my|your|our|their|this|that|it)\b`,
+		Flags:    []string{"it was apart of the plan"},
+		Leaves:   []string{"apart from that it works"},
 		Message:  "Should be \"a part of $1\"",
 		Suggest:  "a part of $1",
 		Category: "Confused words",
@@ -317,6 +367,8 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:  `\bbare\s+with\s+(me|us)\b`,
+		Flags:    []string{"bare with me a moment"},
+		Leaves:   []string{"bear with me a moment"},
 		Message:  "Should be \"bear with $1\"",
 		Suggest:  "bear with $1",
 		Category: "Confused words",
@@ -325,6 +377,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:  `\bcould\s+care\s+less\b`,
+		Flags:    []string{"i could care less"},
 		Message:  "Should be \"couldn't care less\"",
 		Suggest:  "couldn't care less",
 		Category: "Confused words",
@@ -333,6 +386,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:  `\bfor\s+all\s+intensive\s+purposes\b`,
+		Flags:    []string{"for all intensive purposes"},
 		Message:  "Should be \"for all intents and purposes\"",
 		Suggest:  "for all intents and purposes",
 		Category: "Confused words",
@@ -341,6 +395,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:  `\birregardless\b`,
+		Flags:    []string{"irregardless of the cost"},
 		Message:  "Should be \"regardless\"",
 		Suggest:  "regardless",
 		Category: "Confused words",
@@ -349,6 +404,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:  `\bsneak\s+peak\b`,
+		Flags:    []string{"a sneak peak at it"},
 		Message:  "Should be \"sneak peek\"",
 		Suggest:  "sneak peek",
 		Category: "Confused words",
@@ -357,6 +413,7 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:  `\b(peak|peek)\s+(your|my|his|her|their|our)\s+interest\b`,
+		Flags:    []string{"peak your interest"},
 		Message:  "Should be \"pique $2 interest\"",
 		Suggest:  "pique $2 interest",
 		Category: "Confused words",
@@ -365,6 +422,8 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:  `\bin\s+the\s+passed\b`,
+		Flags:    []string{"in the passed we did"},
+		Leaves:   []string{"in the past we did"},
 		Message:  "Should be \"in the past\"",
 		Suggest:  "in the past",
 		Category: "Confused words",
@@ -376,6 +435,8 @@ var confusionRules = []GrammarRule{
 		// the antipattern is the reading where a noun follows it: "in
 		// principal cities", "on principal amounts".
 		Pattern:      `\b(in|on)\s+principal\b`,
+		Flags:        []string{"i agree in principal."},
+		Leaves:       []string{"the bank operates in principal cities"},
 		Antipatterns: []string{`\b(in|on)\s+principal\s+\w`},
 		Message:      "Should be \"$1 principle\"",
 		Suggest:      "$1 principle",
@@ -385,6 +446,8 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:  `\b(some|good|bad|any|my|your|his|her|their|the)\s+advise\b`,
+		Flags:    []string{"thanks for the advise"},
+		Leaves:   []string{"thanks for the advice"},
 		Message:  "Should be \"$1 advice\"",
 		Suggest:  "$1 advice",
 		Category: "Confused words",
@@ -393,6 +456,8 @@ var confusionRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(to|will|would|can|could|please)\s+advice\b`,
+		Flags:       []string{"please advice us"},
+		Leaves:      []string{"please advise us"},
 		Message:     "Should be \"$1 advise\"",
 		Suggest:     "$1 advise",
 		Category:    "Confused words",

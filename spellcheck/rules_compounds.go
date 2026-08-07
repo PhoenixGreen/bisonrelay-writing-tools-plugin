@@ -27,6 +27,8 @@ var compoundRules = []GrammarRule{
 	// writes on purpose.
 	{
 		Pattern:      `\b([Mm])y\s+self\b`,
+		Flags:        []string{"i did it my self"},
+		Leaves:       []string{"my self-esteem took a knock"},
 		Antipatterns: []string{`[Mm]y\s+self-`},
 		Message:      "Should be \"$1yself\"",
 		Suggest:      "$1yself",
@@ -35,6 +37,8 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:      `\b([Yy])our\s+self\b`,
+		Flags:        []string{"you did it your self"},
+		Leaves:       []string{"your self-esteem matters"},
 		Antipatterns: []string{`[Yy]our\s+self-`},
 		Message:      "Should be \"$1ourself\"",
 		Suggest:      "$1ourself",
@@ -43,6 +47,8 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:      `\b([Hh])im\s+self\b`,
+		Flags:        []string{"he did it him self"},
+		Leaves:       []string{"it gave him self-confidence"},
 		Antipatterns: []string{`[Hh]im\s+self-`},
 		Message:      "Should be \"$1imself\"",
 		Suggest:      "$1imself",
@@ -51,6 +57,8 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:      `\b([Hh])er\s+self\b`,
+		Flags:        []string{"she did it her self"},
+		Leaves:       []string{"her self-control is good"},
 		Antipatterns: []string{`[Hh]er\s+self-`},
 		Message:      "Should be \"$1erself\"",
 		Suggest:      "$1erself",
@@ -59,6 +67,8 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:      `\b([Ii])t\s+self\b`,
+		Flags:        []string{"the code writes it self"},
+		Leaves:       []string{"we watched it self-destruct"},
 		Antipatterns: []string{`[Ii]t\s+self-`},
 		Message:      "Should be \"$1tself\"",
 		Suggest:      "$1tself",
@@ -67,6 +77,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Oo])ur\s+selves\b`,
+		Flags:       []string{"we did it our selves"},
 		Message:     "Should be \"$1urselves\"",
 		Suggest:     "$1urselves",
 		Category:    "Grammar",
@@ -74,6 +85,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Tt])hem\s+selves\b`,
+		Flags:       []string{"they did it them selves"},
 		Message:     "Should be \"$1hemselves\"",
 		Suggest:     "$1hemselves",
 		Category:    "Grammar",
@@ -81,6 +93,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Yy])our\s+selves\b`,
+		Flags:       []string{"you did it your selves"},
 		Message:     "Should be \"$1ourselves\"",
 		Suggest:     "$1ourselves",
 		Category:    "Grammar",
@@ -92,6 +105,7 @@ var compoundRules = []GrammarRule{
 	// two words, while the second is a real if uncommon philosophical usage.
 	{
 		Pattern:     `\b([Aa])ny\s+where\b`,
+		Flags:       []string{"is it any where here"},
 		Message:     "Should be \"$1nywhere\"",
 		Suggest:     "$1nywhere",
 		Category:    "Grammar",
@@ -99,6 +113,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Ss])ome\s+where\b`,
+		Flags:       []string{"it is some where here"},
 		Message:     "Should be \"$1omewhere\"",
 		Suggest:     "$1omewhere",
 		Category:    "Grammar",
@@ -106,6 +121,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Ee])very\s+where\b`,
+		Flags:       []string{"it is every where now"},
 		Message:     "Should be \"$1verywhere\"",
 		Suggest:     "$1verywhere",
 		Category:    "Grammar",
@@ -113,6 +129,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Nn])o\s+where\b`,
+		Flags:       []string{"there is no where to go"},
 		Message:     "Should be \"$1owhere\"",
 		Suggest:     "$1owhere",
 		Category:    "Grammar",
@@ -124,6 +141,7 @@ var compoundRules = []GrammarRule{
 	// counted, and "every body in the room" is correct writing.
 	{
 		Pattern:     `\b([Aa])ny\s+thing\b`,
+		Flags:       []string{"is there any thing else"},
 		Message:     "Should be \"$1nything\"",
 		Suggest:     "$1nything",
 		Category:    "Grammar",
@@ -131,6 +149,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Ss])ome\s+thing\b`,
+		Flags:       []string{"there is some thing wrong"},
 		Message:     "Should be \"$1omething\"",
 		Suggest:     "$1omething",
 		Category:    "Grammar",
@@ -138,6 +157,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Ee])very\s+thing\b`,
+		Flags:       []string{"every thing is ready"},
 		Message:     "Should be \"$1verything\"",
 		Suggest:     "$1verything",
 		Category:    "Grammar",
@@ -154,6 +174,8 @@ var compoundRules = []GrammarRule{
 		// skipped by the very test that would have caught it. Moving the
 		// guard into an antipattern is what surfaced it.
 		Pattern:      `\b([Ww])ith\s+out\b`,
+		Flags:        []string{"we did it with out help"},
+		Leaves:       []string{"with out of date info", "with out-of-date info"},
 		Antipatterns: []string{`[Ww]ith\s+out\s+of\b`, `[Ww]ith\s+out-`},
 		Message:      "Should be \"$1ithout\"",
 		Suggest:      "$1ithout",
@@ -163,7 +185,10 @@ var compoundRules = []GrammarRule{
 	{
 		// "would be cause for concern" is correct, and common enough to be
 		// worth the guard.
-		Pattern:      `\b([Bb])e\s+cause\b`,
+		Pattern: `\b([Bb])e\s+cause\b`,
+		// Not "be cause of", which the antipattern is for.
+		Flags:        []string{"i left be cause it rained"},
+		Leaves:       []string{"that would be cause for concern"},
 		Antipatterns: []string{`[Bb]e\s+cause\s+(for|of)\b`},
 		Message:      "Should be \"$1ecause\"",
 		Suggest:      "$1ecause",
@@ -174,6 +199,8 @@ var compoundRules = []GrammarRule{
 		// "in side" is absent, unlike this one: "parked in side streets" is
 		// ordinary English and "the way out side" is not.
 		Pattern:     `\b([Oo])ut\s+side\b`,
+		Flags:       []string{"we waited out side"},
+		Leaves:      []string{"we parked in side streets"},
 		Message:     "Should be \"$1utside\"",
 		Suggest:     "$1utside",
 		Category:    "Grammar",
@@ -181,6 +208,7 @@ var compoundRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b([Aa])\s+part\s+from\b`,
+		Flags:       []string{"a part from that it works"},
 		Message:     "Should be \"$1part from\"",
 		Suggest:     "$1part from",
 		Category:    "Grammar",

@@ -33,6 +33,7 @@ var punctuationRules = []GrammarRule{
 		// The commonest of these by far, and unambiguous: whatever the comma
 		// was joining, the full stop ended it.
 		Pattern:     `,\s*([.!?])`,
+		Flags:       []string{"that is all,."},
 		Message:     "Comma before \"$1\"",
 		Suggest:     "$1",
 		Category:    "Punctuation",
@@ -40,6 +41,7 @@ var punctuationRules = []GrammarRule{
 	},
 	{
 		Pattern:     `,\s*\)`,
+		Flags:       []string{"(as noted,)"},
 		Message:     "Comma before \")\"",
 		Suggest:     ")",
 		Category:    "Punctuation",
@@ -47,6 +49,7 @@ var punctuationRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\(\s*,\s*`,
+		Flags:       []string{"(, as noted)"},
 		Message:     "Comma after \"(\"",
 		Suggest:     "(",
 		Category:    "Punctuation",
@@ -60,6 +63,8 @@ var punctuationRules = []GrammarRule{
 		// Digits are deliberately not included: "1,000" is a number, not a
 		// mistake.
 		Pattern:  `,(["(\[])`,
+		Flags:    []string{`he said,"hello"`},
+		Leaves:   []string{"it cost 1,000 today"},
 		Message:  "Missing space after comma",
 		Suggest:  ", $1",
 		Category: "Spacing",
@@ -71,6 +76,8 @@ var punctuationRules = []GrammarRule{
 		// a mistake: three or more dots is an ellipsis, and a dot pair
 		// against a digit is a version number or a range.
 		Pattern:      `\.\.`,
+		Flags:        []string{"that is all.. we go"},
+		Leaves:       []string{"wait for it... there", "the loop runs 0..10 in Rust"},
 		Antipatterns: []string{`\.{3,}`, `\d\.\.`, `\.\.\d`},
 		Message:      "Doubled full stop",
 		Suggest:      ".",
@@ -90,6 +97,8 @@ var punctuationRules = []GrammarRule{
 		Pattern: `(?<=^|[.!?]\s|\n)(Therefore|Moreover|Furthermore|` +
 			`Nevertheless|Consequently|Additionally|Meanwhile|Firstly|` +
 			`Secondly|Finally)\s+(?=[A-Za-z])`,
+		Flags:       []string{"Therefore we go"},
+		Leaves:      []string{"we can therefore go", "However you do it, it works"},
 		Message:     "Missing comma after \"$1\"",
 		Suggest:     "$1, ",
 		Category:    "Punctuation",
@@ -102,6 +111,7 @@ var punctuationRules = []GrammarRule{
 		// noun phrases, and both would be broken.
 		Pattern: `(?<=^|[.!?]\s|\n)(In conclusion|On the other hand|` +
 			`In other words|As a result)\s+(?=[A-Za-z])`,
+		Flags:       []string{"In conclusion we go"},
 		Message:     "Missing comma after \"$1\"",
 		Suggest:     "$1, ",
 		Category:    "Punctuation",
@@ -117,6 +127,8 @@ var punctuationRules = []GrammarRule{
 		// pattern that insisted on "I" would have missed it.
 		Pattern: `(?<=^|[.!?]\s|\n)(Yes|No)\s+([Ii]|[Ww]e|[Yy]ou|[Hh]e|` +
 			`[Ss]he|[Ii]t|[Tt]hey|thanks|thank)\b`,
+		Flags:    []string{"No i do not", "Yes i agree"},
+		Leaves:   []string{"No one knows the answer", "No longer a problem"},
 		Message:  "Missing comma after \"$1\"",
 		Suggest:  "$1, $2",
 		Category: "Punctuation",
@@ -132,6 +144,7 @@ var punctuationRules = []GrammarRule{
 		// because "so" meaning "in order that" takes no comma, and nothing
 		// here can tell the two apart.
 		Pattern:  `(\w{3,})\s+but\s+(I|we|you|he|she|it|they)\s+(\w+)`,
+		Flags:    []string{"we tried but it failed"},
 		Message:  "Consider a comma before \"but\"",
 		Suggest:  "$1, but $2 $3",
 		Category: "Punctuation",

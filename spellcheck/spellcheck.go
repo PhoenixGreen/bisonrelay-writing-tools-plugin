@@ -55,6 +55,25 @@ type GrammarRule struct {
 	// one, so a rule needing *context* to fire still says so in Pattern.
 	Antipatterns []string `json:"antipatterns,omitempty"`
 
+	// Flags and Leaves are the rule's own proof: text it must catch, and
+	// text it must not. TestRuleExamples runs every one of them.
+	//
+	// Attached to the rule rather than kept in a list somewhere else,
+	// because the failure this plugin actually suffers is not a missing
+	// rule -- it is a rule that was wrong from the day it was written and
+	// went unnoticed for weeks. Three of those were found in a single
+	// afternoon of real use: a message that showed its own template, a
+	// pattern that flagged "12th", and a guard that missed
+	// "with out-of-date". Each would have failed here the moment it was
+	// typed, and pointed at the rule rather than at a line of shared corpus.
+	//
+	// Never sent to the host: this is how the rule is developed, not what
+	// it does. The corpus in spellcheck_test.go stays as well and answers a
+	// different question -- these say a rule works, and the corpus says it
+	// does not fire on writing that is nobody's business but the writer's.
+	Flags  []string `json:"-"`
+	Leaves []string `json:"-"`
+
 	// Severity separates a mistake from an opinion: empty (meaning "error")
 	// for text that is wrong whatever the writer meant, SeveritySuggestion
 	// for a rewrite that is usually an improvement and sometimes not.
@@ -150,6 +169,7 @@ var errorRules = []GrammarRule{
 	// --- doubled input: almost always a slip of the hands ---
 	{
 		Pattern:     `\b(\w+)([ \t]+)\1\b`,
+		Flags:       []string{"the the payment"},
 		Message:     "Repeated word",
 		Suggest:     "$1",
 		Category:    "Grammar",
@@ -157,6 +177,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `[ ]{2,}`,
+		Flags:       []string{"hello  world"},
 		Message:     "Multiple spaces",
 		Suggest:     " ",
 		Category:    "Spacing",
@@ -164,6 +185,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `([,;:])\1+`,
+		Flags:       []string{"stop,, and think"},
 		Message:     "Repeated punctuation",
 		Suggest:     "$1",
 		Category:    "Punctuation",
@@ -173,6 +195,7 @@ var errorRules = []GrammarRule{
 	// --- spacing around punctuation ---
 	{
 		Pattern:     `[ \t]+([,.!?;:])`,
+		Flags:       []string{"hello , world"},
 		Message:     "Space before punctuation",
 		Suggest:     "$1",
 		Category:    "Spacing",
@@ -197,13 +220,21 @@ var errorRules = []GrammarRule{
 		// and a missed flag costs less than a wrong one.
 		Pattern: `(?<=\w\w|[)\]"'])([.!?])(?!(?:` + domainTLDs +
 			`)\b|[\w-]*\.(?:` + domainTLDs + `)\b)([A-Za-z])`,
-		Message:     "Missing space after punctuation",
-		Suggest:     "$1 $U2",
+		Message: "Missing space after punctuation",
+		Suggest: "$1 $U2",
+		Flags:   []string{"(if you are free).what's next"},
+		Leaves: []string{
+			"see example.com for details",
+			"news.ycombinator.com is worth a look",
+			"e.g. this one, i.e. that one",
+		},
 		Category:    "Spacing",
 		Explanation: "Punctuation is followed by a space, which separates it from the next word. Without one the two run together.",
 	},
 	{
 		Pattern:     `([,;:])([A-Za-z])`,
+		Flags:       []string{"stop,and think"},
+		Leaves:      []string{"it cost 1,000 today"},
 		Message:     "Missing space after punctuation",
 		Suggest:     "$1 $2",
 		Category:    "Spacing",
@@ -211,6 +242,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\(\s+`,
+		Flags:       []string{"read ( this ) again"},
 		Message:     "Space inside bracket",
 		Suggest:     "(",
 		Category:    "Spacing",
@@ -218,6 +250,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\s+\)`,
+		Flags:       []string{"read (this ) again"},
 		Message:     "Space inside bracket",
 		Suggest:     ")",
 		Category:    "Spacing",
@@ -233,6 +266,8 @@ var errorRules = []GrammarRule{
 		// pronoun at all. That costs the rule a genuine "i" ending a
 		// sentence, which is a sentence hardly anyone writes.
 		Pattern:     `(?<!\.)\bi\b(?!\.)`,
+		Flags:       []string{"yesterday i left"},
+		Leaves:      []string{"see e.g. i.e. for details"},
 		Message:     "\"I\" is capitalised",
 		Suggest:     "I",
 		Category:    "Capitalization",
@@ -240,6 +275,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bi'(m|ve|ll|d)\b`,
+		Flags:       []string{"i'm going now"},
 		Message:     "\"I\" is capitalised",
 		Suggest:     "I'$1",
 		Category:    "Capitalization",
@@ -251,6 +287,7 @@ var errorRules = []GrammarRule{
 	// exactly why those two are absent.
 	{
 		Pattern:     `\byour welcome\b`,
+		Flags:       []string{"your welcome to try"},
 		Message:     "Should be \"you're welcome\"",
 		Suggest:     "you're welcome",
 		Category:    "Confused words",
@@ -258,6 +295,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\b(could|should|would|must|might)\s+of\b`,
+		Flags:       []string{"we should of gone"},
 		Message:     "Should be \"$1 have\"",
 		Suggest:     "$1 have",
 		Category:    "Confused words",
@@ -265,6 +303,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\balot\b`,
+		Flags:       []string{"thanks alot for that"},
 		Message:     "\"a lot\" is two words",
 		Suggest:     "a lot",
 		Category:    "Grammar",
@@ -272,6 +311,8 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\beveryday (I|you|we|they|he|she|it)\b`,
+		Flags:       []string{"everyday I walk there"},
+		Leaves:      []string{"an everyday problem"},
 		Message:     "\"every day\" is two words as an adverb",
 		Suggest:     "every day $1",
 		Category:    "Grammar",
@@ -279,6 +320,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bcant\b`,
+		Flags:       []string{"i cant do it"},
 		Message:     "Missing apostrophe",
 		Suggest:     "can't",
 		Category:    "Punctuation",
@@ -286,6 +328,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bwont\b`,
+		Flags:       []string{"it wont work"},
 		Message:     "Missing apostrophe",
 		Suggest:     "won't",
 		Category:    "Punctuation",
@@ -293,6 +336,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bdont\b`,
+		Flags:       []string{"i dont know"},
 		Message:     "Missing apostrophe",
 		Suggest:     "don't",
 		Category:    "Punctuation",
@@ -300,6 +344,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bdoesnt\b`,
+		Flags:       []string{"it doesnt work"},
 		Message:     "Missing apostrophe",
 		Suggest:     "doesn't",
 		Category:    "Punctuation",
@@ -307,6 +352,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bisnt\b`,
+		Flags:       []string{"it isnt ready"},
 		Message:     "Missing apostrophe",
 		Suggest:     "isn't",
 		Category:    "Punctuation",
@@ -314,6 +360,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bwasnt\b`,
+		Flags:       []string{"it wasnt ready"},
 		Message:     "Missing apostrophe",
 		Suggest:     "wasn't",
 		Category:    "Punctuation",
@@ -321,6 +368,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bwouldnt\b`,
+		Flags:       []string{"it wouldnt work"},
 		Message:     "Missing apostrophe",
 		Suggest:     "wouldn't",
 		Category:    "Punctuation",
@@ -328,6 +376,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bcouldnt\b`,
+		Flags:       []string{"i couldnt tell"},
 		Message:     "Missing apostrophe",
 		Suggest:     "couldn't",
 		Category:    "Punctuation",
@@ -335,6 +384,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bshouldnt\b`,
+		Flags:       []string{"we shouldnt wait"},
 		Message:     "Missing apostrophe",
 		Suggest:     "shouldn't",
 		Category:    "Punctuation",
@@ -342,6 +392,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bthats\b`,
+		Flags:       []string{"thats the one"},
 		Message:     "Missing apostrophe",
 		Suggest:     "that's",
 		Category:    "Punctuation",
@@ -349,6 +400,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bwhats\b`,
+		Flags:       []string{"whats the plan"},
 		Message:     "Missing apostrophe",
 		Suggest:     "what's",
 		Category:    "Punctuation",
@@ -356,6 +408,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\blets\s+(go|see|say|try|talk|do|get|make)\b`,
+		Flags:       []string{"lets go now"},
 		Message:     "Missing apostrophe",
 		Suggest:     "let's $1",
 		Category:    "Punctuation",
@@ -395,6 +448,7 @@ var errorRules = []GrammarRule{
 		// capital is a real error and the fix is unambiguous, but it is the
 		// first rule to drop if the underlines become wallpaper.
 		Pattern:     `(?<=^|[.!?]\s|\n)([a-z])([a-z0-9']*)`,
+		Flags:       []string{"the payment cleared. then we left"},
 		Message:     "Sentence should start with a capital",
 		Suggest:     "$U1$2",
 		Category:    "Capitalization",
@@ -408,6 +462,8 @@ var errorRules = []GrammarRule{
 	// it, whatever the sentence is about.
 	{
 		Pattern:     `\btheir\s+(is|are|was|were|will|would|has|have|had)\b`,
+		Flags:       []string{"their is a problem"},
+		Leaves:      []string{"their wallet is empty"},
 		Message:     "Should be \"there $1\"",
 		Suggest:     "there $1",
 		Category:    "Confused words",
@@ -415,6 +471,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\btheir\s+(he|she|it|we|they|you)\b`,
+		Flags:       []string{"their he goes"},
 		Message:     "Should be \"there $1\"",
 		Suggest:     "there $1",
 		Category:    "Confused words",
@@ -447,6 +504,8 @@ var errorRules = []GrammarRule{
 		// where the bare "going" is not.
 		Pattern: `\b([Ii])ts\s+(a|an|the|not|been|my|your|our|his|her|their|` +
 			`raining|snowing|too|going\s+to)\b`,
+		Flags:       []string{"its raining outside"},
+		Leaves:      []string{"its true value is unclear"},
 		Message:     "Should be \"$1t's $2\"",
 		Suggest:     "$1t's $2",
 		Category:    "Confused words",
@@ -460,6 +519,7 @@ var errorRules = []GrammarRule{
 	{
 		// The mirror: "it's" is "it is", which cannot precede a noun it owns.
 		Pattern:     `\b([Ii])t's\s+(own|owner)\b`,
+		Flags:       []string{"it's own fault"},
 		Message:     "Should be \"$1ts $2\"",
 		Suggest:     "$1ts $2",
 		Category:    "Confused words",
@@ -468,6 +528,7 @@ var errorRules = []GrammarRule{
 	{
 		// "there own" is never right: only the possessive can precede it.
 		Pattern:     `\bthere\s+(own|self|selves)\b`,
+		Flags:       []string{"they brought there own"},
 		Message:     "Should be \"their $1\"",
 		Suggest:     "their $1",
 		Category:    "Confused words",
@@ -475,6 +536,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		Pattern:     `\bthere\s+(is|are|was|were)\s+own\b`,
+		Flags:       []string{"there is own equipment"},
 		Message:     "Should be \"their own\"",
 		Suggest:     "their own",
 		Category:    "Confused words",
@@ -490,6 +552,8 @@ var errorRules = []GrammarRule{
 		// deliberately does not match -- there is no single right answer for
 		// "!?!".
 		Pattern:     `([!?])\1{2,}`,
+		Flags:       []string{"really!!! yes"},
+		Leaves:      []string{"really!! yes"},
 		Message:     "Excessive punctuation",
 		Suggest:     "$1",
 		Category:    "Style",

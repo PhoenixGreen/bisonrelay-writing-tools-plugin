@@ -59,6 +59,8 @@ const initialisms = `[FHLMNRSX][A-Z0-9]*\b`
 var articleRules = []GrammarRule{
 	{
 		Pattern: `\b([Aa])\s+([AaEeIiOoUu]\w*)`,
+		Flags:   []string{"that is a odd effect"},
+		Leaves:  []string{"a unique offer", "a one-off", "a European utility", "a useful thing"},
 		Antipatterns: []string{
 			`\b[Aa]\s+(` + consonantSoundedVowels + `)`,
 		},
@@ -69,6 +71,8 @@ var articleRules = []GrammarRule{
 	},
 	{
 		Pattern: `\b([Aa])n\s+([B-DF-HJ-NP-TV-Zb-df-hj-np-tv-z]\w*)`,
+		Flags:   []string{"that is an dog"},
+		Leaves:  []string{"an hour of honest work", "an heir to it", "she has an MBA", "an X-ray booked"},
 		Antipatterns: []string{
 			`\b[Aa]n\s+(` + vowelSoundedConsonants + `)`,
 			`\b[Aa]n\s+` + initialisms,

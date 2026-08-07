@@ -205,6 +205,7 @@ var correctText = []string{
 	"She has an MBA, an SMS alert and an X-ray booked.",
 	"An unimportant detail took an uninteresting hour.",
 	"That is an odd effect on an old idea.",
+	"The plan is to close the door and to narrow the gap.",
 	"No one knows the answer yet.",
 	"No longer a problem.",
 	"Yes and no, depending.",
@@ -311,44 +312,13 @@ func usesDartOnlySyntax(pattern string) bool {
 	return dartOnlySyntax.MatchString(pattern)
 }
 
-// TestRulesCatchTheirOwnMistake pairs each compilable rule with text it is
-// supposed to flag, so a pattern edited into uselessness is noticed.
-func TestRulesCatchTheirOwnMistake(t *testing.T) {
-	// Only rules RE2 can compile appear here; "Repeated word" and "Repeated
-	// punctuation" use backreferences and are exercised app-side instead.
-	cases := map[string]string{
-		"Multiple spaces":          "hello  world",
-		"Space before punctuation": "hello , world",
-		"Space inside bracket":     "( hello)",
-		"\"a lot\" is two words":   "thanks alot",
-		"Missing apostrophe":       "i cant do it",
-		// Keyed by the rule's message template, not the expanded text: a
-		// message may reference the pattern's capture groups.
-		"Should be \"there $1\"": "their is a problem",
-		"Should be \"their $1\"": "they brought there own",
-		"Should be \"$1t's $2\"": "its going to rain",
-		"Should be \"$1ts $2\"":  "it's own fault",
-	}
-	for message, text := range cases {
-		var fired bool
-		for _, r := range Rules {
-			if r.Message != message && !strings.HasPrefix(r.Message, message) {
-				continue
-			}
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				continue
-			}
-			if re.MatchString(text) {
-				fired = true
-				break
-			}
-		}
-		if !fired {
-			t.Errorf("no rule with message %q flagged %q", message, text)
-		}
-	}
-}
+// TestRulesCatchTheirOwnMistake is gone, and TestRuleExamples replaced it.
+//
+// It paired rules with text by *message*, in a map, and messages are not
+// unique: eight rules say `Should be "$1 effect"` and a map keeps one of
+// them. So it silently covered a fraction of what it appeared to, and the
+// fraction shrank every time a rule was added. Examples live on the rule
+// now, so every rule is covered exactly once and by construction.
 
 // categories is the closed set the app groups rules by. Adding one is a
 // deliberate act -- the popup heading it appears under is written to match --
@@ -444,6 +414,79 @@ func TestAntipatternsAreReachable(t *testing.T) {
 					"the corpus -- add the sentence it is for, or the "+
 					"exception is dead", i, r.Message, source)
 			}
+		}
+	}
+}
+
+// TestRuleExamples runs every rule against the text it carries with it.
+//
+// The point of attaching examples to a rule rather than keeping them in a
+// list is that a rule and its proof are edited together, so a pattern
+// tightened past the thing it was for fails immediately and by name. Every
+// bug found by hand in this plugin so far has been of that kind.
+func TestRuleExamples(t *testing.T) {
+	for i, r := range Rules {
+		if len(r.Flags) == 0 {
+			t.Errorf("Rules[%d] (%q) carries no example of what it catches",
+				i, r.Message)
+		}
+
+		re, err := regexp.Compile(r.Pattern)
+		if err != nil {
+			// One of the handful Dart has constructs for and RE2 does not.
+			// Its examples cannot run here; those rules are exercised
+			// individually in the app's own tests, where they do run.
+			if !usesDartOnlySyntax(r.Pattern) {
+				t.Errorf("Rules[%d] (%q) does not compile: %v", i, r.Message, err)
+			}
+			continue
+		}
+
+		var exceptions []*regexp.Regexp
+		for _, source := range r.Antipatterns {
+			anti, err := regexp.Compile(source)
+			if err != nil {
+				t.Errorf("Rules[%d] (%q): antipattern %q does not compile: %v",
+					i, r.Message, source, err)
+				continue
+			}
+			exceptions = append(exceptions, anti)
+		}
+
+		// fires reports whether the rule, exceptions and all, has anything
+		// to say about text -- which is what the app will do with it.
+		fires := func(text string) bool {
+			for _, at := range re.FindAllStringIndex(text, -1) {
+				if !suppressed(exceptions, text, at) {
+					return true
+				}
+			}
+			return false
+		}
+
+		for _, text := range r.Flags {
+			if !fires(text) {
+				t.Errorf("Rules[%d] (%q) does not catch %q, which it is for",
+					i, r.Message, text)
+			}
+		}
+		for _, text := range r.Leaves {
+			if fires(text) {
+				t.Errorf("Rules[%d] (%q) fires on %q, which it must not",
+					i, r.Message, text)
+			}
+		}
+	}
+}
+
+// Every antipattern needs a reason on the record. One with no Leaves example
+// is an exception nobody can see the point of, and nobody will notice when
+// it stops working -- the only symptom is a rule quietly getting noisier.
+func TestAntipatternsHaveAReason(t *testing.T) {
+	for i, r := range Rules {
+		if len(r.Antipatterns) > 0 && len(r.Leaves) == 0 {
+			t.Errorf("Rules[%d] (%q) has %d antipattern(s) and no example of "+
+				"what they are protecting", i, r.Message, len(r.Antipatterns))
 		}
 	}
 }

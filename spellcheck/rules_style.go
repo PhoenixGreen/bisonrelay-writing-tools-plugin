@@ -171,9 +171,13 @@ func buildStyleRules() []GrammarRule {
 
 	for _, pair := range wordy {
 		rules = append(rules, GrammarRule{
-			Pattern:  `\b` + eitherCase(pair[0]) + `\b`,
-			Message:  "Wordy -- try \"" + pair[1] + "\"",
-			Suggest:  pair[1],
+			Pattern: `\b` + eitherCase(pair[0]) + `\b`,
+			Message: "Wordy -- try \"" + pair[1] + "\"",
+			Suggest: pair[1],
+			// Generated with the rule, from the phrase it is about. A
+			// hand-written example for each of ninety pairs would be ninety
+			// chances to paste the wrong phrase beside the wrong pattern.
+			Flags:    []string{"we wrote " + pair[0] + " today"},
 			Category: "Style",
 			Explanation: "\"" + pair[0] + "\" can usually be shortened to \"" +
 				pair[1] + "\" without losing anything. Shorter is easier to " +
@@ -190,6 +194,7 @@ func buildStyleRules() []GrammarRule {
 			Pattern:  `\b` + eitherCase(phrase) + wordBoundary(phrase),
 			Message:  "Overused phrase",
 			Suggest:  "",
+			Flags:    []string{"we wrote " + phrase + " today"},
 			Category: "Style",
 			Explanation: "\"" + phrase + "\" is used so often that it no " +
 				"longer carries the picture it was built on. Saying it " +
@@ -204,9 +209,13 @@ func buildStyleRules() []GrammarRule {
 			// certain, and requiring it is a deliberate trade: most passive
 			// writing names no agent and goes unflagged here, which is the
 			// price of never flagging "I was interested" as passive.
-			Pattern:  `\b(is|are|was|were|be|been|being)\s+(` + participles + `)\s+by\b`,
-			Message:  "Passive voice",
-			Suggest:  "",
+			Pattern: `\b(is|are|was|were|be|been|being)\s+(` + participles + `)\s+by\b`,
+			Message: "Passive voice",
+			Suggest: "",
+			Flags:   []string{"the post was written by someone else"},
+			// The agent is what makes this certain, and the reason most
+			// passive writing goes unflagged -- see the note above.
+			Leaves:   []string{"I was interested in the result"},
 			Category: "Style",
 			Explanation: "This sentence puts the thing acted on first and " +
 				"the actor last. Naming the actor first is usually shorter " +
@@ -221,6 +230,8 @@ func buildStyleRules() []GrammarRule {
 			Pattern:  `\b(is|are|was|were)\s+being\s+(\w+ed|` + participles + `)\b`,
 			Message:  "Passive voice",
 			Suggest:  "",
+			Flags:    []string{"the plan is being considered again"},
+			Leaves:   []string{"she was being careful about it"},
 			Category: "Style",
 			Explanation: "This sentence puts the thing acted on first and " +
 				"the actor last. Naming the actor first is usually shorter " +
