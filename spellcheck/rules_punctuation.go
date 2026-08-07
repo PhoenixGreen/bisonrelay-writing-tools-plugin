@@ -67,16 +67,14 @@ var punctuationRules = []GrammarRule{
 			"it from what comes next. Without one the two run together.",
 	},
 	{
-		// Two full stops. Three is an ellipsis and four is somebody leaning
-		// on the key, so this catches exactly two and leaves both alone --
-		// the lookbehind and lookahead are the whole rule.
-		//
-		// The digit in the lookbehind keeps it off version numbers and
-		// ranges.
-		Pattern:  `(?<![.\d])\.\.(?!\.)`,
-		Message:  "Doubled full stop",
-		Suggest:  ".",
-		Category: "Punctuation",
+		// Two full stops. The antipatterns are the two readings that are not
+		// a mistake: three or more dots is an ellipsis, and a dot pair
+		// against a digit is a version number or a range.
+		Pattern:      `\.\.`,
+		Antipatterns: []string{`\.{3,}`, `\d\.\.`, `\.\.\d`},
+		Message:      "Doubled full stop",
+		Suggest:      ".",
+		Category:     "Punctuation",
 		Explanation: "One full stop ends a sentence. Three make an " +
 			"ellipsis. Two are neither.",
 	},

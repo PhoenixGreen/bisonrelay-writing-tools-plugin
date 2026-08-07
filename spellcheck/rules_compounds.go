@@ -17,47 +17,53 @@ const explainCompound = "This is one word. Written as two it means " +
 
 var compoundRules = []GrammarRule{
 	// --- the -self family ---
-	// The lookahead is what keeps these off "my self-esteem", where "self"
-	// is the start of a hyphenated word and the split is not a mistake.
+	// The antipattern is what keeps these off "my self-esteem", where
+	// "self" is the start of a hyphenated word and the split is not a
+	// mistake.
 	//
 	// An adjective between the two -- "my true self", "her better self" --
 	// does not match either, which is what makes the bare pair safe to
 	// correct: "my self" with nothing in between is not a phrase anybody
 	// writes on purpose.
 	{
-		Pattern:     `\b([Mm])y\s+self\b(?!-)`,
-		Message:     "Should be \"$1yself\"",
-		Suggest:     "$1yself",
-		Category:    "Grammar",
-		Explanation: explainCompound,
+		Pattern:      `\b([Mm])y\s+self\b`,
+		Antipatterns: []string{`[Mm]y\s+self-`},
+		Message:      "Should be \"$1yself\"",
+		Suggest:      "$1yself",
+		Category:     "Grammar",
+		Explanation:  explainCompound,
 	},
 	{
-		Pattern:     `\b([Yy])our\s+self\b(?!-)`,
-		Message:     "Should be \"$1ourself\"",
-		Suggest:     "$1ourself",
-		Category:    "Grammar",
-		Explanation: explainCompound,
+		Pattern:      `\b([Yy])our\s+self\b`,
+		Antipatterns: []string{`[Yy]our\s+self-`},
+		Message:      "Should be \"$1ourself\"",
+		Suggest:      "$1ourself",
+		Category:     "Grammar",
+		Explanation:  explainCompound,
 	},
 	{
-		Pattern:     `\b([Hh])im\s+self\b(?!-)`,
-		Message:     "Should be \"$1imself\"",
-		Suggest:     "$1imself",
-		Category:    "Grammar",
-		Explanation: explainCompound,
+		Pattern:      `\b([Hh])im\s+self\b`,
+		Antipatterns: []string{`[Hh]im\s+self-`},
+		Message:      "Should be \"$1imself\"",
+		Suggest:      "$1imself",
+		Category:     "Grammar",
+		Explanation:  explainCompound,
 	},
 	{
-		Pattern:     `\b([Hh])er\s+self\b(?!-)`,
-		Message:     "Should be \"$1erself\"",
-		Suggest:     "$1erself",
-		Category:    "Grammar",
-		Explanation: explainCompound,
+		Pattern:      `\b([Hh])er\s+self\b`,
+		Antipatterns: []string{`[Hh]er\s+self-`},
+		Message:      "Should be \"$1erself\"",
+		Suggest:      "$1erself",
+		Category:     "Grammar",
+		Explanation:  explainCompound,
 	},
 	{
-		Pattern:     `\b([Ii])t\s+self\b(?!-)`,
-		Message:     "Should be \"$1tself\"",
-		Suggest:     "$1tself",
-		Category:    "Grammar",
-		Explanation: explainCompound,
+		Pattern:      `\b([Ii])t\s+self\b`,
+		Antipatterns: []string{`[Ii]t\s+self-`},
+		Message:      "Should be \"$1tself\"",
+		Suggest:      "$1tself",
+		Category:     "Grammar",
+		Explanation:  explainCompound,
 	},
 	{
 		Pattern:     `\b([Oo])ur\s+selves\b`,
@@ -140,22 +146,29 @@ var compoundRules = []GrammarRule{
 
 	// --- the rest, each guarded against the phrase it collides with ---
 	{
-		// "with out of date information" is the one real reading of the pair,
-		// and the only one this has to stay clear of.
-		Pattern:     `\b([Ww])ith\s+out\b(?!\s+of\b)`,
-		Message:     "Should be \"$1ithout\"",
-		Suggest:     "$1ithout",
-		Category:    "Grammar",
-		Explanation: explainCompound,
+		// "with out of date information" is the real reading of the pair,
+		// and "with out-of-date information" is the same thing hyphenated.
+		//
+		// The second was missed while this was a lookahead, and the corpus
+		// could not say so: RE2 cannot compile a lookahead, so the rule was
+		// skipped by the very test that would have caught it. Moving the
+		// guard into an antipattern is what surfaced it.
+		Pattern:      `\b([Ww])ith\s+out\b`,
+		Antipatterns: []string{`[Ww]ith\s+out\s+of\b`, `[Ww]ith\s+out-`},
+		Message:      "Should be \"$1ithout\"",
+		Suggest:      "$1ithout",
+		Category:     "Grammar",
+		Explanation:  explainCompound,
 	},
 	{
 		// "would be cause for concern" is correct, and common enough to be
 		// worth the guard.
-		Pattern:     `\b([Bb])e\s+cause\b(?!\s+(for|of)\b)`,
-		Message:     "Should be \"$1ecause\"",
-		Suggest:     "$1ecause",
-		Category:    "Grammar",
-		Explanation: explainCompound,
+		Pattern:      `\b([Bb])e\s+cause\b`,
+		Antipatterns: []string{`[Bb]e\s+cause\s+(for|of)\b`},
+		Message:      "Should be \"$1ecause\"",
+		Suggest:      "$1ecause",
+		Category:     "Grammar",
+		Explanation:  explainCompound,
 	},
 	{
 		// "in side" is absent, unlike this one: "parked in side streets" is

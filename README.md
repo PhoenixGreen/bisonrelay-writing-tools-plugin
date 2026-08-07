@@ -43,6 +43,18 @@ That distinction is what makes the second and third groups below shippable at al
 it they would put the same alarming red wave under prose that is perfectly good, and the
 reader who learns to ignore that mark ignores it over the misspellings too.
 
+A rule can also carry **antipatterns** -- patterns saying where it is *not* to fire. The
+alternative is a negative lookahead glued onto the end of the pattern, which works and is
+worse in three ways: it is unreadable, it cannot be tested on its own, and it puts the rule
+beyond Go's RE2, which is how the corpus below loses sight of exactly the rules whose
+exceptions most need watching. Moving the guards out of the patterns took the number of
+rules the corpus cannot check from 19 to 9, and immediately found a bug in one of them --
+"with out-of-date firmware" had been flagged since the rule was written, and the test that
+would have caught it had been skipping the rule for the same reason.
+
+Antipatterns suppress and cannot create: a rule that needs *context* to fire still says so
+in its pattern.
+
 Each rule carries a category and an explanation as well as a message and a replacement.
 The message names the problem in the few words a menu row allows; the explanation is a
 sentence saying what is wrong and *why*, which is the whole reason the app shows a popup
@@ -79,6 +91,18 @@ large. The risk runs the other way from most rules here -- the danger is that th
 is *also* a phrase somewhere -- so each is either a pair with no valid reading apart, or is
 guarded against the reading it has. "My self-esteem", "every body in the room", "would be
 cause for concern" and "parked in side streets" are all in the corpus for that reason.
+
+**Unpaired brackets and quotes.** A bracket that is never closed, a closer with nothing
+open, a mismatched pair, an odd number of double quotes. A counting check rather than a
+matching one, and the only one of those that is an error: an unclosed bracket is not a matter
+of taste, and the reader of the post sees it too. It reports the position rather than the
+imbalance, because in a long post finding it is most of the work.
+
+Code and emoticons are skipped. A fenced block or an inline span is full of brackets that
+balance in a language this knows nothing about, and `:)` is a closing bracket with nothing
+open -- flagging that would be the single most annoying thing this plugin does. The
+apostrophe is not counted at all: it is the same character as a single quote, and "don't"
+would leave every message unbalanced.
 
 **Commas and the marks around them.** Most of what people mean by "check my commas" is not
 decidable by pattern matching. Whether a clause is restrictive, whether two halves of a

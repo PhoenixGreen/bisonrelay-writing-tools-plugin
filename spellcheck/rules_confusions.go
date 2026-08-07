@@ -164,12 +164,15 @@ var confusionRules = []GrammarRule{
 		Explanation: explainToToo,
 	},
 	{
-		// "Me to." ending a sentence is always "me too".
-		Pattern:     `\b(me|him|her|us|them)\s+to(?=[.!?]|$)`,
-		Message:     "Should be \"$1 too\"",
-		Suggest:     "$1 too",
-		Category:    "Confused words",
-		Explanation: explainToToo,
+		// "Me to." ending a sentence is always "me too". The antipattern is
+		// the other reading: a "to" with something after it is the
+		// preposition doing its job.
+		Pattern:      `\b(me|him|her|us|them)\s+to\b`,
+		Antipatterns: []string{`\b(me|him|her|us|them)\s+to\s+\S`},
+		Message:      "Should be \"$1 too\"",
+		Suggest:      "$1 too",
+		Category:     "Confused words",
+		Explanation:  explainToToo,
 	},
 
 	// --- their / they're ---
@@ -354,13 +357,14 @@ var confusionRules = []GrammarRule{
 			"the past tense of \"to pass\".",
 	},
 	{
-		// Only at the end of a clause. "Principal" is also an adjective, and
-		// `\bin principal\b` on its own flags "in principal cities" and "in
-		// principal amounts", both of which are correct.
-		Pattern:  `\b(in|on)\s+principal(?=[.,;:!?]|$)`,
-		Message:  "Should be \"$1 principle\"",
-		Suggest:  "$1 principle",
-		Category: "Confused words",
+		// Only at the end of a clause. "Principal" is also an adjective, so
+		// the antipattern is the reading where a noun follows it: "in
+		// principal cities", "on principal amounts".
+		Pattern:      `\b(in|on)\s+principal\b`,
+		Antipatterns: []string{`\b(in|on)\s+principal\s+\w`},
+		Message:      "Should be \"$1 principle\"",
+		Suggest:      "$1 principle",
+		Category:     "Confused words",
 		Explanation: "A \"principle\" is a rule or belief. A \"principal\" " +
 			"is the head of something, or the main one.",
 	},

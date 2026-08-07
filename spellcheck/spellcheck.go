@@ -39,6 +39,22 @@ type GrammarRule struct {
 	// never the regex.
 	Explanation string `json:"explanation,omitempty"`
 
+	// Antipatterns suppress this rule wherever they match over it: the rule
+	// fires, and then does not, because the text turned out to be one of the
+	// readings it is not about.
+	//
+	// Preferred to a negative lookahead on Pattern, which works and is worse
+	// in three ways. It is unreadable -- the exception becomes punctuation
+	// on the end of an already dense expression. It cannot be tested on its
+	// own, so nothing notices when it stops matching what it was written
+	// for. And it puts the rule beyond Go's RE2, which is how the corpus in
+	// spellcheck_test.go loses sight of exactly the rules whose exceptions
+	// most need watching.
+	//
+	// Suppression only: an antipattern takes a match away and cannot create
+	// one, so a rule needing *context* to fire still says so in Pattern.
+	Antipatterns []string `json:"antipatterns,omitempty"`
+
 	// Severity separates a mistake from an opinion: empty (meaning "error")
 	// for text that is wrong whatever the writer meant, SeveritySuggestion
 	// for a rewrite that is usually an improvement and sometimes not.

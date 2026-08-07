@@ -177,6 +177,9 @@ var correctText = []string{
 	// The split-compound rules. Each of these is the reading that keeps a
 	// pair of words apart, and each one cost a rule its guard.
 	"My self-esteem took a knock.",
+	"Your self-esteem matters too.",
+	"It gave him self-confidence.",
+	"We watched it self-destruct.",
 	"Her self-control is remarkable.",
 	"I like my true self better.",
 	"Every body in the room turned around.",
@@ -184,11 +187,14 @@ var correctText = []string{
 	"Interest is charged on the whole amount, be cause for celebration or not.",
 	"We parked in side streets all week.",
 	"It came with out-of-date firmware.",
+	"We shipped it with out of date documentation.",
+	"Send it to me to review before Friday.",
 	"There is a part of this I still do not follow.",
 
 	// Punctuation. Numbers are the trap that runs through all of it.
 	"It cost 1,000 DCR at 3:00 on 3.5 percent.",
 	"The file is at v1.2.3, not v1.2.4.",
+	"The loop runs 0..10 in Rust.",
 	"No one knows the answer yet.",
 	"No longer a problem.",
 	"Yes and no, depending.",
@@ -237,10 +243,28 @@ func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 			skipped++
 			continue
 		}
+		// The antipatterns are part of the rule, so they are part of the
+		// test. Without this a rule that moved its guard out of the pattern
+		// -- which is the point of having them -- would read as a new false
+		// positive on text it has always handled correctly.
+		var exceptions []*regexp.Regexp
+		for _, source := range r.Antipatterns {
+			anti, err := regexp.Compile(source)
+			if err != nil {
+				t.Errorf("rule %q: antipattern %q does not compile: %v",
+					r.Message, source, err)
+				continue
+			}
+			exceptions = append(exceptions, anti)
+		}
+
 		for _, text := range correctText {
-			if m := re.FindString(text); m != "" {
+			for _, at := range re.FindAllStringIndex(text, -1) {
+				if suppressed(exceptions, text, at) {
+					continue
+				}
 				t.Errorf("rule %q fired on correct text %q (matched %q)",
-					r.Message, text, m)
+					r.Message, text, text[at[0]:at[1]])
 			}
 		}
 	}
@@ -251,6 +275,22 @@ func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 	// been waved through as one more expected skip.
 	t.Logf("%d of %d rules are beyond RE2 and are covered app-side, where "+
 		"they run", skipped, len(Rules))
+}
+
+// suppressed reports whether an antipattern covers the match at [start,end).
+//
+// Contained, not merely overlapping: an antipattern describes a longer
+// reading that the match is part of -- "my self" inside "my self-esteem" --
+// so a pattern that happens to clip the edge of one is not that reading.
+func suppressed(exceptions []*regexp.Regexp, text string, at []int) bool {
+	for _, anti := range exceptions {
+		for _, e := range anti.FindAllStringIndex(text, -1) {
+			if e[0] <= at[0] && e[1] >= at[1] {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // dartOnlySyntax is the constructs Dart's regex engine has and Go's RE2 does
@@ -358,5 +398,42 @@ func TestSharedMessagesShareTheirCategory(t *testing.T) {
 				"with the same message is in %q", i, r.Message, r.Category, was)
 		}
 		seen[r.Message] = r.Category
+	}
+}
+
+// An antipattern that matches nothing is an exception nobody notices has
+// stopped working: the rule simply gets noisier, and the only evidence is a
+// false positive somebody has to report.
+//
+// This is the check a negative lookahead could never have -- glued onto the
+// end of a pattern, there is nothing to test on its own.
+func TestAntipatternsAreReachable(t *testing.T) {
+	// Checked against the corpus rather than a list of its own, so the two
+	// cannot drift. An exception exists to protect a reading, and a reading
+	// worth protecting is a line of correct writing -- which is what the
+	// corpus is. Adding an antipattern therefore means adding the sentence
+	// it is for, where the false-positive guard will also see it.
+
+	for i, r := range Rules {
+		for _, source := range r.Antipatterns {
+			anti, err := regexp.Compile(source)
+			if err != nil {
+				t.Errorf("Rules[%d] (%q): antipattern %q does not compile: %v",
+					i, r.Message, source, err)
+				continue
+			}
+			var matched bool
+			for _, text := range correctText {
+				if anti.MatchString(text) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				t.Errorf("Rules[%d] (%q): antipattern %q matches nothing in "+
+					"the corpus -- add the sentence it is for, or the "+
+					"exception is dead", i, r.Message, source)
+			}
+		}
 	}
 }

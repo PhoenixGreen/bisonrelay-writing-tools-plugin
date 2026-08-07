@@ -36,6 +36,10 @@ const (
 	// CheckSpellingVariants fires when both spellings of a Values pair appear
 	// in one message. $1 is the spelling flagged, $2 the other one.
 	CheckSpellingVariants = "spelling-variant-inconsistency"
+
+	// CheckUnpairedBrackets fires on a bracket or quote that is never
+	// closed, or a closer with nothing open. $1 is the mark.
+	CheckUnpairedBrackets = "unpaired-brackets"
 )
 
 // AnalysisCheck is one declared check. It mirrors the spellcheck-data
@@ -87,6 +91,16 @@ var AnalysisChecks = []AnalysisCheck{
 		Category:    "Repetition",
 		Severity:    SeveritySuggestion,
 		Explanation: "Consecutive sentences opening the same way give writing a monotonous rhythm. Varying how a sentence starts is usually enough to fix it.",
+	},
+	{
+		ID: CheckUnpairedBrackets,
+		// An error rather than a suggestion, unusually for a check that
+		// counts: a bracket that is never closed is not a matter of taste.
+		// It reads as a mistake because it is one, and the reader of the
+		// post sees it too.
+		Message:     "Unclosed \"$1\"",
+		Category:    "Punctuation",
+		Explanation: "This opens something that is never closed. A reader looking for the other half will not find it.",
 	},
 	{
 		ID:          CheckSpellingVariants,
