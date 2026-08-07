@@ -49,9 +49,9 @@ var confusionRules = []GrammarRule{
 		// as an explicit list rather than `\w+er`, which would sweep up
 		// "never", "however", "either" and "other" -- all of which precede
 		// "then" perfectly well.
-		Pattern: `\b(more|less|better|worse|bigger|smaller|larger|higher|` +
-			`lower|faster|slower|greater|fewer|older|younger|longer|shorter|` +
-			`cheaper|easier|harder|rather|other)\s+then\b`,
+		Pattern: `\b([mM]ore|[lL]ess|[bB]etter|[wW]orse|[bB]igger|[sS]maller|[lL]arger|[hH]igher|` +
+			`[lL]ower|[fF]aster|[sS]lower|[gG]reater|[fF]ewer|[oO]lder|[yY]ounger|[lL]onger|[sS]horter|` +
+			`[cC]heaper|[eE]asier|[hH]arder|[rR]ather|[oO]ther)\s+then\b`,
 		Flags:       []string{"this is better then that"},
 		Leaves:      []string{"better than that"},
 		Message:     "Should be \"$1 than\"",
@@ -226,8 +226,8 @@ var confusionRules = []GrammarRule{
 		// are also verbs stay out: "the plan is to close the door" and "the
 		// aim is to narrow the gap" are correct writing that "close" or
 		// "narrow" in this list would flag.
-		Pattern: `\b(is|are|was|were|be|been|it's|that's|feel|feels|felt|` +
-			`seems|looks|way|far)\s+to\s+(much|many|late|early|big|small|` +
+		Pattern: `\b([iI]s|[aA]re|[wW]as|[wW]ere|[bB]e|[bB]een|[iI]t's|[tT]hat's|[fF]eel|[fF]eels|[fF]elt|` +
+			`[sS]eems|[lL]ooks|[wW]ay|[fF]ar)\s+to\s+(much|many|late|early|big|small|` +
 			`hard|easy|expensive|long|short|slow|fast|good|bad|old|young|` +
 			`heavy|light|loud|quiet|soon|often|high|low|hot|cold|busy|` +
 			`tired|strong|weak|wide|deep|thin|thick|dark|bright|complex|` +

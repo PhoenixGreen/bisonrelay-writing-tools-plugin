@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"unicode"
 )
 
 func TestParseWordsSkipsBlanksAndComments(t *testing.T) {
@@ -577,6 +578,52 @@ func TestRuleFixesResolveTheRule(t *testing.T) {
 					break
 				}
 			}
+		}
+	}
+}
+
+// leadingAlternation returns the words of a pattern's opening `\b(a|b|c)`
+// group, or nil if it does not open with one.
+func leadingAlternation(pattern string) []string {
+	const prefix = `\b(`
+	if !strings.HasPrefix(pattern, prefix) {
+		return nil
+	}
+	end := strings.IndexByte(pattern, ')')
+	if end < 0 {
+		return nil
+	}
+	return strings.Split(pattern[len(prefix):end], "|")
+}
+
+// TestLeadingWordsAcceptEitherCase is the guard for the bug that made every
+// literal rule miss the start of a sentence.
+//
+// "Dont", "Cant", "Alot", "Thats" and "Your welcome" were all sailing
+// through, which is precisely where those mistakes are typed. The fix was a
+// pass over every rule folding the first letter of its leading word, and the
+// pass had a hole: it read one backtick literal at a time, so a pattern built
+// by concatenating several -- which is how the long alternations are written
+// -- kept its first line folded and its continuation lines lowercase. Two
+// rules sat half-converted afterwards and nothing said so.
+//
+// This asks the question directly of the finished pattern instead.
+func TestLeadingWordsAcceptEitherCase(t *testing.T) {
+	for i, r := range Rules {
+		// The capitalisation rules are the exception, and they are the whole
+		// exception: each exists to find the lowercase spelling, so accepting
+		// a capital would make it fire on the form it is asking for.
+		if r.Category == "Capitalization" {
+			continue
+		}
+		for _, word := range leadingAlternation(r.Pattern) {
+			first := rune(word[0])
+			if !unicode.IsLower(first) {
+				continue
+			}
+			t.Errorf("Rules[%d] (%q): leading alternative %q is lower-case "+
+				"only, so the rule cannot fire at the start of a sentence",
+				i, r.Message, word)
 		}
 	}
 }
