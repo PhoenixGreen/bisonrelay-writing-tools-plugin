@@ -132,6 +132,17 @@ var correctText = []string{
 	"Some parts of it were exciting, and a photo of you was on the wall.",
 	"A box of chocolates was on the table and both of the answers were right.",
 	"Neither of us was ready, and each of them was tested.",
+	// The shapes the newest agreement and double-negative rules look for,
+	// all of it correct writing.
+	"There was a receipt in my bag, and there was glass everywhere.",
+	"There was a series of delays and there was progress at last.",
+	"Bread and butter was all we had, and fish and chips was on the menu.",
+	"The news and the weather was on while we waited.",
+	"I didn't need it and it doesn't succeed often.",
+	"I couldn't find it anywhere and she never said anything.",
+	"There was hardly any time and hardly any seats were left.",
+	"He had already gone, and I have just eaten.",
+	"She told me and my friend the news, and it gave me and my mate time.",
 	"see docs.rs and news.ycombinator.com for details",
 	// its/it's used correctly, which the new rules must not touch.
 	"The channel lost its funding, and it's closed now.",

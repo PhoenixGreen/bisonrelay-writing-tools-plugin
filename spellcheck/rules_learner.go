@@ -27,7 +27,7 @@ var baseForms = [][2]string{
 	{"heard", "hear"}, {"kept", "keep"}, {"lost", "lose"}, {"paid", "pay"},
 	{"put", "put"}, {"read", "read"}, {"sent", "send"}, {"slept", "sleep"},
 	{"spent", "spend"}, {"stood", "stand"}, {"understood", "understand"},
-	{"won", "win"},
+	{"won", "win"}, {"had", "have"}, {"was", "be"}, {"were", "be"},
 }
 
 // comparatives are the -er adjectives, listed rather than matched as `\w+er`
@@ -65,6 +65,29 @@ var forwardTo = [][2]string{
 	{"talk", "talking"}, {"try", "trying"}, {"get", "getting"},
 	{"catch", "catching"}, {"join", "joining"},
 }
+
+// negativePronouns pair a negative word with the one wanted after an
+// auxiliary that is already negative. "I couldn't find it nowhere" has two
+// negatives doing the work of one.
+var negativePronouns = [][2]string{
+	{"nothing", "anything"}, {"nowhere", "anywhere"},
+	{"nobody", "anybody"}, {"no one", "anyone"}, {"none", "any"},
+	{"never", "ever"},
+}
+
+// negatedAuxiliaries are the contracted negatives, for the rules above and
+// below. Spelled with the apostrophe optional so a message that has not been
+// through the contraction rules yet is still covered.
+const negatedAuxiliaries = `[Cc]ouldn'?t|[Cc]an'?t|[Dd]idn'?t|[Dd]on'?t|` +
+	`[Dd]oesn'?t|[Ww]on'?t|[Ww]ouldn'?t|[Ss]houldn'?t|[Ii]sn'?t|[Aa]ren'?t|` +
+	`[Ww]asn'?t|[Ww]eren'?t|[Hh]aven'?t|[Hh]asn'?t|[Hh]adn'?t`
+
+// notReallyPastTense are verbs ending in the letters "ed" that are not past
+// tenses at all, so the rule below must not read them as one. Every one of
+// them is a plain form ending in "eed" -- which is exactly what an auxiliary
+// in front of it is asking for.
+const notReallyPastTense = `need|feed|succeed|proceed|exceed|bleed|breed|` +
+	`speed|freed|seed|heed|agreed|indeed`
 
 var learnerRules = buildLearnerRules()
 
@@ -118,7 +141,59 @@ func buildLearnerRules() []GrammarRule {
 		})
 	}
 
+	// A double negative built from a negated auxiliary and a negative
+	// pronoun. Unlike the "hardly" family these have a clean fix, because
+	// each negative word has a positive twin that means what was intended.
+	for _, pair := range negativePronouns {
+		negative, positive := pair[0], pair[1]
+		rules = append(rules, GrammarRule{
+			// Up to three words between the two, which is as far apart as
+			// they get before the second belongs to a clause of its own.
+			Pattern: `\b(` + negatedAuxiliaries + `)\s+((?:\w+\s+){0,3})` +
+				negative + `\b`,
+			Message:  "Double negative -- should be \"" + positive + "\"",
+			Suggest:  "$1 $2" + positive,
+			Flags:    []string{"I couldn't find it " + negative},
+			Leaves:   []string{"I couldn't find it " + positive},
+			Category: "Grammar",
+			Explanation: "The auxiliary is already negative, so \"" +
+				negative + "\" after it makes two negatives where one was " +
+				"meant. English uses \"" + positive + "\" here.",
+		})
+	}
+
 	rules = append(rules,
+		GrammarRule{
+			// "There was hardly no seats." "Hardly" is a negative of its
+			// own, so "no" after it is the same doubling as above.
+			Pattern:     `\b([Hh]ardly|[Ss]carcely|[Bb]arely)\s+no\b`,
+			Message:     "Should be \"$1 any\"",
+			Suggest:     "$1 any",
+			Flags:       []string{"there was hardly no seats left"},
+			Leaves:      []string{"there was hardly any seat left"},
+			Category:    "Grammar",
+			Explanation: "\"Hardly\" is already negative, so \"no\" after it doubles it. \"Hardly any\" is what was meant.",
+		},
+		GrammarRule{
+			// "I didn't realised." The auxiliary carries the tense, so the
+			// verb goes back to its plain form -- but which plain form is
+			// not something a pattern can work out: "realised" wants
+			// "realise" and "ordered" wants "order", and the difference is
+			// whether the verb ended in "e" before the ending was added.
+			// So this one names the fault and leaves the fix.
+			Pattern:      `\b(` + negatedAuxiliaries + `)\s+(\w+ed)\b`,
+			Antipatterns: []string{`\b(` + negatedAuxiliaries + `)\s+(` + notReallyPastTense + `)\b`},
+			Message:      "\"$2\" should be the plain form after \"$1\"",
+			Suggest:      "",
+			Flags:        []string{"I didn't realised until later", "I didn't ordered tuna"},
+			Leaves: []string{
+				"I didn't realise until later",
+				// Plain forms that merely end in the same two letters.
+				"I didn't need it", "it doesn't succeed often", "we didn't agreed",
+			},
+			Category:    "Grammar",
+			Explanation: explainAuxiliary,
+		},
 		GrammarRule{
 			// "She dont like coffee." The pronoun decides the form of the
 			// auxiliary, and a third-person singular takes "doesn't".
@@ -178,7 +253,8 @@ func buildLearnerRules() []GrammarRule {
 			// "I have been waiting since two hours." "Since" takes the point
 			// something started; a length of time takes "for".
 			Pattern: `\b([Ss]ince)\s+(\d+|two|three|four|five|six|seven|` +
-				`eight|nine|ten|a\s+few|several|many)\s+` +
+				`eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|` +
+				`fifty|sixty|ninety|a\s+few|several|many)\s+` +
 				`(seconds|minutes|hours|days|weeks|months|years)\b`,
 			Message:     "Should be \"for $2 $3\"",
 			Suggest:     "for $2 $3",

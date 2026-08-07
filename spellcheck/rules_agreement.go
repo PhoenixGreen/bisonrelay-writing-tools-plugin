@@ -54,6 +54,15 @@ const quantifiers = `[Ss]ome|[Mm]any|[Aa]ll|[Bb]oth|[Ss]everal|[Ff]ew|[Mm]ost`
 // word after a quantifier as a plural because it ends in that letter, which
 // is true of "parts" and "pieces" and equally true of "business", "series"
 // and "analysis" -- so those are named and left alone.
+// pluralNouns are common count nouns in the plural, for the existential
+// rule below. A list rather than a pattern, because no ending distinguishes
+// a plural from a singular noun that happens to end in "s".
+const pluralNouns = `receipts|seats|people|persons|things|options|reasons|` +
+	`problems|cars|shops|coins|tickets|books|files|users|messages|` +
+	`questions|ideas|errors|bugs|places|students|members|players|children|` +
+	`men|women|kids|days|weeks|years|hours|minutes|letters|emails|photos|` +
+	`chairs|tables|boxes|bags|shoes|clothes|keys|cards|notes|posts`
+
 const massNounsInS = `news|business|progress|glass|class|series|species|` +
 	`means|process|access|address|analysis|basis|crisis|status|focus|bonus`
 
@@ -152,6 +161,66 @@ var agreementRules = []GrammarRule{
 		Suggest:     "$1 were $2",
 		Category:    "Grammar",
 		Explanation: explainAgreement,
+	},
+	{
+		// "There was old receipts in my bag." An existential "there was" in
+		// front of a plural is the commonest agreement slip there is,
+		// because the verb is chosen before the noun it belongs to has been
+		// thought of.
+		//
+		// The nouns are a list rather than `\w+s`, for the same reason as
+		// everywhere else in this file: "there was progress", "there was
+		// glass everywhere" and "there was a series of delays" are all
+		// correct and all end in the same letter.
+		Pattern: `\b([Tt]here)\s+was\s+((?:\w+\s+){0,2})(` + pluralNouns + `)\b`,
+		Flags: []string{
+			"There was old receipts in my bag",
+			"there was two people waiting",
+		},
+		Leaves: []string{
+			"there were old receipts in my bag",
+			"there was a receipt in my bag",
+		},
+		Message:     "Should be \"$1 were\"",
+		Suggest:     "$1 were $2$3",
+		Category:    "Grammar",
+		Explanation: explainAgreement,
+	},
+	{
+		// A compound subject: two things joined by "and" are plural however
+		// singular each one is.
+		//
+		// Safe only because the first half is already plural. "Bread and
+		// butter was", "fish and chips was" and "trial and error was" are
+		// all correct -- a fixed pair naming one thing -- and every one of
+		// them has a singular first half. With "cards and licence" there is
+		// no reading where the subject is one thing.
+		Pattern: `\b(\w+s)\s+and\s+((?:\w+\s+)?\w+)\s+was\b`,
+		Antipatterns: []string{
+			// Spans the whole match, not just its first half: an antipattern
+			// suppresses a rule only where it contains it.
+			`\b(` + massNounsInS + `)\s+and\s+(?:\w+\s+)?\w+\s+was\b`,
+			// "And" joining two clauses rather than two subjects. Found by
+			// the corpus on "a series of delays and there was progress",
+			// where "delays" and "there" are not a compound subject at all
+			// -- the second belongs to a sentence of its own.
+			`\b\w+s\s+and\s+(there|it|he|she|they|we|I|you|this|that)\s+was\b`,
+		},
+		Flags: []string{
+			"my bank cards and driving licence was inside it",
+			"the keys and my wallet was missing",
+		},
+		Leaves: []string{
+			"my bank cards and driving licence were inside it",
+			"bread and butter was all we had",
+			"there was a series of delays and there was progress at last",
+			// A singular noun that ends in "s" is not a plural half.
+			"the news and the weather was on",
+		},
+		Message:     "Should be \"$1 and $2 were\"",
+		Suggest:     "$1 and $2 were",
+		Category:    "Grammar",
+		Explanation: explainAgreement + " Two things joined by \"and\" are plural, however singular each one is on its own.",
 	},
 	{
 		// "Loads of" and "lots of" do take mass nouns, so these need the
