@@ -40,6 +40,31 @@ const (
 	// CheckUnpairedBrackets fires on a bracket or quote that is never
 	// closed, or a closer with nothing open. $1 is the mark.
 	CheckUnpairedBrackets = "unpaired-brackets"
+
+	// CheckDateWeekday fires when a written weekday is not the weekday that
+	// date fell on, and the year is written out. $1 is the weekday as typed,
+	// $2 the weekday it actually was.
+	CheckDateWeekday = "date-weekday-mismatch"
+
+	// CheckDateWeekdayThisYear is the same check where no year was written
+	// and the current one is assumed. $1 and $2 are as above.
+	//
+	// A separate id rather than a flag on the one above, because the two are
+	// not equally certain and must not be equally loud. With the year
+	// written, a mismatch is a plain error. Without it, "Monday 10 August"
+	// may be a date in some other year and perfectly correct, so this one is
+	// a suggestion and is worded as an observation rather than a correction.
+	// Two ids also means either can be turned off on its own.
+	CheckDateWeekdayThisYear = "date-weekday-mismatch-this-year"
+
+	// CheckImpossibleDate fires on a day number that month never has -- "31
+	// February", or "29 February" in a year written out and not a leap year.
+	// $1 is the date as typed, $2 the number of days that month has.
+	CheckImpossibleDate = "impossible-date"
+
+	// CheckApostropheConsistency fires when straight and curly apostrophes
+	// are both used inside words in one message. $1 is the odd one out.
+	CheckApostropheConsistency = "apostrophe-inconsistency"
 )
 
 // AnalysisCheck is one declared check. It mirrors the spellcheck-data
@@ -116,5 +141,34 @@ var AnalysisChecks = []AnalysisCheck{
 		Severity:    SeveritySuggestion,
 		Explanation: "Both spellings are correct, but mixing them in one message looks careless. Pick whichever you prefer and use it throughout.",
 		Values:      consistencyPairs,
+	},
+	{
+		// The one check here that does arithmetic rather than counting, and
+		// the only one that can be certain about something a careful reader
+		// would still miss. Nobody proofreads a date against a calendar.
+		ID:          CheckDateWeekday,
+		Message:     "That date was a $2, not a $1",
+		Category:    "Consistency",
+		Explanation: "The weekday and the date do not agree. One of the two is wrong, and which one is a question only you can answer -- the correction offered here changes the weekday, on the assumption that the date is the part that was looked up.",
+	},
+	{
+		ID:          CheckDateWeekdayThisYear,
+		Message:     "This year that date is a $2, not a $1",
+		Category:    "Consistency",
+		Severity:    SeveritySuggestion,
+		Explanation: "No year was written, so this assumes the current one. If you meant a date in another year the weekday may well be right, which is why this is a suggestion rather than a correction.",
+	},
+	{
+		ID:          CheckImpossibleDate,
+		Message:     "\"$1\" is not a date -- that month has $2 days",
+		Category:    "Consistency",
+		Explanation: "No such day exists in that month. Nothing is offered to replace it because the slip could as easily be the month as the number.",
+	},
+	{
+		ID:          CheckApostropheConsistency,
+		Message:     "Mixed apostrophes -- \"$1\" is the odd one out",
+		Category:    "Consistency",
+		Severity:    SeveritySuggestion,
+		Explanation: "This message uses both the straight apostrophe and the curly one inside words. Either is fine; both together looks like text pasted from two places, which is usually what it is.",
 	},
 }
