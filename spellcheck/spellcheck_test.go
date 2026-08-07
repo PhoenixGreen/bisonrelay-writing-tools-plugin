@@ -112,6 +112,20 @@ var correctText = []string{
 	"That is a means to an end and a series of steps.",
 	"It became a crisis, which is a process nobody enjoys.",
 	"A few years ago we shipped a couple of days early.",
+
+	// Agreement. Every line here is correct and sits in exactly the shape
+	// rules_agreement.go looks for, which is the only reason that file is
+	// allowed to exist at all -- the subjunctive, a singular subject with a
+	// plural noun beside the verb, and the quantifiers that take a mass noun.
+	"If I were you I would wait, and I wish it were simpler.",
+	"She asked whether it were possible, but as it were, nobody minded.",
+	"The list of files was long and the set of rules was short.",
+	"There was plenty of time and there was lots of grass.",
+	"Some of it was fine, and all of this was expected.",
+	"All business of this kind was handled locally.",
+	"We use it to open the door, and I suppose to err is human.",
+	"He was supposed to call, and we used to meet on Fridays.",
+	"I can hardly wait, and we could hardly move.",
 	"see docs.rs and news.ycombinator.com for details",
 	// its/it's used correctly, which the new rules must not touch.
 	"The channel lost its funding, and it's closed now.",

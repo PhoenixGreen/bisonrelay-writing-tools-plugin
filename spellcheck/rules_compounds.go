@@ -15,7 +15,48 @@ package spellcheck
 const explainCompound = "This is one word. Written as two it means " +
 	"something else, or nothing at all."
 
-var compoundRules = []GrammarRule{
+// runTogether are two-word phrases people write as one. The dictionary
+// cannot help: it can say "atleast" is not a word, but a speller offers
+// single words and the answer here is two, so it reaches for "atlas" and
+// "least" never appears.
+//
+// Each of these has no reading as one word at all, which is what makes them
+// safe. Words that are genuinely both -- "everyday" as an adjective and
+// "every day" as an adverb, "alright" as an accepted variant of "all right"
+// -- are not here; the first has its own rule that looks at what follows,
+// and the second is a fight about usage rather than a mistake.
+var runTogether = [][2]string{
+	{"atleast", "at least"},
+	{"aswell", "as well"},
+	{"infact", "in fact"},
+	{"ofcourse", "of course"},
+	{"incase", "in case"},
+	{"atall", "at all"},
+	{"inspite", "in spite"},
+	{"aslong", "as long"},
+	{"eachother", "each other"},
+	{"anyways", "anyway"},
+}
+
+func buildRunTogetherRules() []GrammarRule {
+	rules := make([]GrammarRule, 0, len(runTogether))
+	for _, pair := range runTogether {
+		one, two := pair[0], pair[1]
+		rules = append(rules, GrammarRule{
+			Pattern:  `\b` + eitherCase(one) + `\b`,
+			Message:  "Should be \"" + two + "\"",
+			Suggest:  two,
+			Flags:    []string{"we wrote " + one + " today"},
+			Category: "Grammar",
+			Explanation: "\"" + one + "\" is two words: \"" + two +
+				"\". The speller cannot offer this on its own, because a " +
+				"dictionary answers with one word and this needs two.",
+		})
+	}
+	return rules
+}
+
+var compoundRules = append(buildRunTogetherRules(), []GrammarRule{
 	// --- the -self family ---
 	// The antipattern is what keeps these off "my self-esteem", where
 	// "self" is the start of a hyphenated word and the split is not a
@@ -240,4 +281,4 @@ var compoundRules = []GrammarRule{
 		Category:    "Grammar",
 		Explanation: "\"Apart from\" means except for. \"A part\" is a piece of something.",
 	},
-}
+}...)

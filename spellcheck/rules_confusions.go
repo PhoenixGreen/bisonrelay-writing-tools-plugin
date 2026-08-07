@@ -305,6 +305,23 @@ var confusionRules = []GrammarRule{
 		Explanation: explainParticiple,
 	},
 	{
+		Pattern:     `\b([hH]ave|[hH]as|[hH]ad|[hH]aving)\s+forgot\b`,
+		Flags:       []string{"he had forgot about it completely"},
+		Leaves:      []string{"he had forgotten about it"},
+		Message:     "Should be \"$1 forgotten\"",
+		Suggest:     "$1 forgotten",
+		Category:    "Grammar",
+		Explanation: explainParticiple,
+	},
+	{
+		Pattern:     `\b([hH]ave|[hH]as|[hH]ad|[hH]aving)\s+ate\b`,
+		Flags:       []string{"we have ate already"},
+		Message:     "Should be \"$1 eaten\"",
+		Suggest:     "$1 eaten",
+		Category:    "Grammar",
+		Explanation: explainParticiple,
+	},
+	{
 		Pattern:     `\b([hH]ave|[hH]as|[hH]ad|[hH]aving)\s+saw\b`,
 		Flags:       []string{"i have saw it"},
 		Message:     "Should be \"$1 seen\"",

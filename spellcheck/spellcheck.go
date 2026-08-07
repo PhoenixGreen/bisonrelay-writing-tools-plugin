@@ -144,7 +144,7 @@ const domainTLDs = "com|org|net|edu|gov|mil|int|io|dev|app|xyz|info|biz|tv|" +
 // Only the first two groups fire on text that is wrong whatever the writer
 // meant. The third is marked SeveritySuggestion and holds to a different
 // standard -- see the note at the top of rules_style.go.
-var Rules = concat(errorRules, confusionRules, compoundRules, articleRules, pluralArticleRules, ordinalRules, brandRules,
+var Rules = concat(errorRules, buildContractionRules(), confusionRules, compoundRules, articleRules, pluralArticleRules, ordinalRules, brandRules, agreementRules,
 	properNounRules, punctuationRules, styleRules)
 
 func concat(groups ...[]GrammarRule) []GrammarRule {
@@ -153,6 +153,56 @@ func concat(groups ...[]GrammarRule) []GrammarRule {
 		all = append(all, group...)
 	}
 	return all
+}
+
+// contractions are words missing their apostrophe, paired with the spelling
+// wanted. Table-driven because there are two dozen of them differing in
+// nothing but two strings, and written out longhand the first twelve took
+// eighty lines and still left "didnt" -- the commonest of the lot -- out.
+//
+// Everything here is a spelling that is not an English word, which is what
+// makes the rules safe to apply on sight. That is why the list stops where
+// it does: "wed", "ill", "well", "shell", "hell", "id" and "were" are all
+// real words, so "wed" cannot be corrected to "we'd" without knowing whether
+// somebody got married. Those need the sentence, and the sentence is not
+// available here.
+//
+// "Its" and "your" are absent for the same reason and are handled in
+// rules_confusions.go, where the positions that decide them are spelled out.
+var contractions = [][2]string{
+	{"cant", "can't"}, {"wont", "won't"}, {"dont", "don't"},
+	{"didnt", "didn't"}, {"doesnt", "doesn't"}, {"isnt", "isn't"},
+	{"arent", "aren't"}, {"wasnt", "wasn't"}, {"werent", "weren't"},
+	{"havent", "haven't"}, {"hasnt", "hasn't"}, {"hadnt", "hadn't"},
+	{"wouldnt", "wouldn't"}, {"couldnt", "couldn't"},
+	{"shouldnt", "shouldn't"}, {"mustnt", "mustn't"}, {"neednt", "needn't"},
+	{"thats", "that's"}, {"whats", "what's"}, {"theres", "there's"},
+	{"wheres", "where's"}, {"heres", "here's"}, {"whos", "who's"},
+	{"youre", "you're"}, {"theyre", "they're"}, {"hes", "he's"},
+	{"shes", "she's"}, {"ive", "I've"}, {"weve", "we've"},
+	{"youve", "you've"}, {"theyve", "they've"}, {"youd", "you'd"},
+	{"theyd", "they'd"}, {"youll", "you'll"}, {"theyll", "they'll"},
+	{"oclock", "o'clock"},
+}
+
+const explainContraction = "This is a contraction -- two words shortened " +
+	"into one -- and the apostrophe stands in for the letters that were " +
+	"dropped."
+
+func buildContractionRules() []GrammarRule {
+	rules := make([]GrammarRule, 0, len(contractions))
+	for _, pair := range contractions {
+		wrong, right := pair[0], pair[1]
+		rules = append(rules, GrammarRule{
+			Pattern:     `\b` + eitherCase(wrong) + `\b`,
+			Flags:       []string{"i " + wrong + " think so"},
+			Message:     "Missing apostrophe",
+			Suggest:     right,
+			Category:    "Punctuation",
+			Explanation: explainContraction,
+		})
+	}
+	return rules
 }
 
 // errorRules are the checks that fire only on text that is wrong.
@@ -321,94 +371,6 @@ var errorRules = []GrammarRule{
 		Explanation: "\"Everyday\" as one word is an adjective meaning ordinary, as in \"an everyday problem\". Saying when something happens takes two words.",
 	},
 	{
-		Pattern:     `\b[cC]ant\b`,
-		Flags:       []string{"i cant do it"},
-		Message:     "Missing apostrophe",
-		Suggest:     "can't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[wW]ont\b`,
-		Flags:       []string{"it wont work"},
-		Message:     "Missing apostrophe",
-		Suggest:     "won't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[dD]ont\b`,
-		Flags:       []string{"i dont know"},
-		Message:     "Missing apostrophe",
-		Suggest:     "don't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[dD]oesnt\b`,
-		Flags:       []string{"it doesnt work"},
-		Message:     "Missing apostrophe",
-		Suggest:     "doesn't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[iI]snt\b`,
-		Flags:       []string{"it isnt ready"},
-		Message:     "Missing apostrophe",
-		Suggest:     "isn't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[wW]asnt\b`,
-		Flags:       []string{"it wasnt ready"},
-		Message:     "Missing apostrophe",
-		Suggest:     "wasn't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[wW]ouldnt\b`,
-		Flags:       []string{"it wouldnt work"},
-		Message:     "Missing apostrophe",
-		Suggest:     "wouldn't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[cC]ouldnt\b`,
-		Flags:       []string{"i couldnt tell"},
-		Message:     "Missing apostrophe",
-		Suggest:     "couldn't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[sS]houldnt\b`,
-		Flags:       []string{"we shouldnt wait"},
-		Message:     "Missing apostrophe",
-		Suggest:     "shouldn't",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[tT]hats\b`,
-		Flags:       []string{"thats the one"},
-		Message:     "Missing apostrophe",
-		Suggest:     "that's",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
-		Pattern:     `\b[wW]hats\b`,
-		Flags:       []string{"whats the plan"},
-		Message:     "Missing apostrophe",
-		Suggest:     "what's",
-		Category:    "Punctuation",
-		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
-	},
-	{
 		Pattern:     `\b[lL]ets\s+(go|see|say|try|talk|do|get|make)\b`,
 		Flags:       []string{"lets go now"},
 		Message:     "Missing apostrophe",
@@ -549,9 +511,14 @@ var errorRules = []GrammarRule{
 		Explanation: "\"It's\" is short for \"it is\", which does not fit before a noun it owns. The possessive \"its\" has no apostrophe.",
 	},
 	{
-		// "there own" is never right: only the possessive can precede it.
-		Pattern:     `\b[tT]here\s+(own|self|selves)\b`,
-		Flags:       []string{"they brought there own"},
+		// "There own" is never right: only the possessive can precede it.
+		// The nouns beside it are the ones with no reading after a "there"
+		// -- "way over there" is the natural order, and "there way" is not a
+		// phrase. A general "there + noun" rule would be wrong constantly,
+		// since "there is a problem" -- any statement at all -- puts a noun
+		// somewhere after it.
+		Pattern:     `\b[tT]here\s+(own|self|selves|way|ways|house|home|car|job|turn|fault|parents|kids)\b`,
+		Flags:       []string{"they brought there own", "has to find there way home"},
 		Message:     "Should be \"their $1\"",
 		Suggest:     "their $1",
 		Category:    "Confused words",
