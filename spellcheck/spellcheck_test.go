@@ -195,6 +195,16 @@ var correctText = []string{
 	"It cost 1,000 DCR at 3:00 on 3.5 percent.",
 	"The file is at v1.2.3, not v1.2.4.",
 	"The loop runs 0..10 in Rust.",
+
+	// a/an. The first line is every family the "a" rule must not touch, the
+	// second the same for "an", and both are correct writing that the rule
+	// as usually stated -- "an before a vowel" -- would break.
+	"It was a unique opportunity, a one-off, and a euro-denominated unit.",
+	"A university course on a European utility is a useful thing once a year.",
+	"We waited an hour for an honest answer from an heir.",
+	"She has an MBA, an SMS alert and an X-ray booked.",
+	"An unimportant detail took an uninteresting hour.",
+	"That is an odd effect on an old idea.",
 	"No one knows the answer yet.",
 	"No longer a problem.",
 	"Yes and no, depending.",

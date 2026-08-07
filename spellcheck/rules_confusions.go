@@ -98,9 +98,24 @@ var confusionRules = []GrammarRule{
 	// --- affect / effect ---
 	{
 		// A determiner forces a noun.
-		Pattern:     `\b(a|an|the|this|that|any|no|side|net|little|great|whose)\s+affect\b`,
+		//
+		// The indefinite article is separated out below, because correcting
+		// the word changes which article the sentence needs: "a affect"
+		// becomes "an effect", not "a effect". A rule that carries the
+		// determiner through unchanged hands back a phrase that is still
+		// wrong, and this one did.
+		Pattern:     `\b(the|this|that|any|no|side|net|little|great|whose)\s+affect\b`,
 		Message:     "Should be \"$1 effect\"",
 		Suggest:     "$1 effect",
+		Category:    "Confused words",
+		Explanation: explainAffectEffect,
+	},
+	{
+		// Both "a affect" and "an affect" become "an effect": the vowel is
+		// what decides, and after the correction there is one.
+		Pattern:     `\b([Aa])n?\s+affect\b`,
+		Message:     "Should be \"$1n effect\"",
+		Suggest:     "$1n effect",
 		Category:    "Confused words",
 		Explanation: explainAffectEffect,
 	},

@@ -118,6 +118,18 @@ you do it, it works" and "Similarly designed products failed" are both correct a
 be broken by a comma. Numbers run through all of it: "1,000", "3:00" and "v1.2.3" are correct
 and common, so every rule is written to leave them alone.
 
+**"A" against "an".** The rule everybody knows -- "an" before a vowel -- is about *sound*,
+and spelling only mostly agrees with it: "a unique opportunity" and "an hour" are both
+correct and both break it as usually stated. Nothing here can hear anything, so the letters
+decide and the exceptions are listed -- which makes this the clearest case in the plugin for
+antipatterns. The rule is one line and the interesting part is entirely the two lists it must
+not touch: the "yoo" words (unique, uniform, university, euro, European), the silent-h words
+(hour, honest, heir), and the initialisms whose letter *names* start with a vowel (an MBA, an
+X-ray).
+
+The trap in the first list is that "uni" is not the test. "Unimportant" and "uninteresting"
+open the same way on paper and take "an", so the stems are spelled out rather than shortened.
+
 **Confusable pairs.** 33 rules covering then/than, lose/loose, affect/effect, your/you're,
 to/too, whose/who's, their/they're and the past participles after have/has/had. LanguageTool
 decides the general case with ngram frequency data -- given "more money then you", it knows
