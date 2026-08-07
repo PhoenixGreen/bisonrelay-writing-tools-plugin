@@ -144,7 +144,7 @@ const domainTLDs = "com|org|net|edu|gov|mil|int|io|dev|app|xyz|info|biz|tv|" +
 // Only the first two groups fire on text that is wrong whatever the writer
 // meant. The third is marked SeveritySuggestion and holds to a different
 // standard -- see the note at the top of rules_style.go.
-var Rules = concat(errorRules, confusionRules, compoundRules, articleRules,
+var Rules = concat(errorRules, confusionRules, compoundRules, articleRules, pluralArticleRules,
 	properNounRules, punctuationRules, styleRules)
 
 func concat(groups ...[]GrammarRule) []GrammarRule {

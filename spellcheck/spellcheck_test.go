@@ -99,6 +99,18 @@ var correctText = []string{
 	"We should have tested it first; now we know.",
 	"I'm going to the shop, and then I'll head home.",
 	"Fine. Next question, then.",
+
+	// "A" before a plural. All correct, and all of it is exactly the shape
+	// the pluralAfterA rules look for, so this is where they are kept
+	// honest. Two ways it is right: a plural describing the noun after it,
+	// and a singular noun that merely ends in the letter s.
+	"We put a comments section on a results page.",
+	"She joined a sales team after opening a savings account.",
+	"It is a systems problem, not a settings menu one.",
+	"There is a bus at six and a class after it.",
+	"That is a means to an end and a series of steps.",
+	"It became a crisis, which is a process nobody enjoys.",
+	"A few years ago we shipped a couple of days early.",
 	"see docs.rs and news.ycombinator.com for details",
 	// its/it's used correctly, which the new rules must not touch.
 	"The channel lost its funding, and it's closed now.",

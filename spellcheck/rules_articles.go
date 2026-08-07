@@ -106,3 +106,80 @@ func eitherCaseAlternation(stems []string) string {
 	}
 	return strings.Join(out, "|")
 }
+
+// pluralAfterA pairs a plural with the singular "a" wanted, for the rules
+// built below.
+//
+// A curated list rather than a pattern, because "a" before a word ending in
+// "s" is very often correct: a bus, a class, a crisis, a series, a species, a
+// means. Those are singular nouns that happen to end in the letter.
+//
+// Every singular here opens with a consonant, which is not a coincidence --
+// it is the condition for being on the list. A vowel-initial singular would
+// need the article corrected too, and whether it takes "an" is a question
+// about sound rather than spelling: "an update" and "a user" both start with
+// a "u". That is the argument the rest of this file exists to have, and there
+// is no reason to have it twice.
+var pluralAfterA = [][2]string{
+	{"years", "year"}, {"days", "day"}, {"weeks", "week"},
+	{"months", "month"}, {"minutes", "minute"}, {"seconds", "second"},
+	{"decades", "decade"}, {"centuries", "century"}, {"moments", "moment"},
+	{"mistakes", "mistake"}, {"reasons", "reason"}, {"results", "result"},
+	{"problems", "problem"}, {"questions", "question"}, {"changes", "change"},
+	{"versions", "version"}, {"copies", "copy"}, {"files", "file"},
+	{"posts", "post"}, {"messages", "message"}, {"comments", "comment"},
+	{"users", "user"}, {"wallets", "wallet"}, {"payments", "payment"},
+	{"transactions", "transaction"}, {"notes", "note"}, {"lists", "list"},
+	{"links", "link"}, {"pages", "page"}, {"words", "word"},
+	{"lines", "line"}, {"parts", "part"}, {"places", "place"},
+	{"cases", "case"}, {"features", "feature"}, {"projects", "project"},
+	{"tools", "tool"}, {"things", "thing"},
+}
+
+// pluralHeadFollowers are the words that can follow the plural above, and
+// they are the whole of what makes these rules safe.
+//
+// A plural noun after "a" is usually correct English, because it is
+// modifying the noun after it: a sales team, a settings menu, a comments
+// section, a payments provider, a results page. Every one of those is right,
+// and a rule keyed on "a" plus a plural alone would flag the lot.
+//
+// What is wrong is a plural that is the head noun itself, and the way to
+// know it is the head is that no noun follows it. A preposition, a time
+// adverb or the end of the sentence all say so: "a years ago" has nothing
+// left for "years" to modify.
+const pluralHeadFollowers = `ago|earlier|later|before|after|of|in|on|at|` +
+	`for|from|with|to|by|since`
+
+var pluralArticleRules = buildPluralArticleRules()
+
+func buildPluralArticleRules() []GrammarRule {
+	rules := make([]GrammarRule, 0, len(pluralAfterA))
+	for _, pair := range pluralAfterA {
+		plural, singular := pair[0], pair[1]
+		rules = append(rules, GrammarRule{
+			// The follower is captured and echoed back rather than looked
+			// ahead at, so the rule stays inside RE2 and the corpus can run
+			// it. The alternative branch is the punctuation that ends a
+			// sentence, where there is likewise no noun to modify.
+			Pattern: `\b([Aa])\s+` + plural +
+				`(\s+(?:` + pluralHeadFollowers + `)\b|[.,;!?])`,
+			Message: "Should be \"$1 " + singular + "\"",
+			Suggest: "$1 " + singular + "$2",
+			Flags: []string{
+				"even a " + plural + " ago",
+				"it took a " + plural + ".",
+			},
+			Leaves: []string{
+				"we shipped a " + plural + " team",
+				"the " + plural + " arrived on time",
+			},
+			Category: "Grammar",
+			Explanation: "\"A\" introduces one of something, so the noun " +
+				"after it is singular. \"" + plural + "\" here is the noun " +
+				"itself rather than a word describing the next one, which " +
+				"is why \"a " + plural + " page\" is fine and this is not.",
+		})
+	}
+	return rules
+}
