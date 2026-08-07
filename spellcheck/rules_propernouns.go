@@ -38,6 +38,11 @@ const lowercaseCompounds = `[Ff]rench\s+(fries|toast|press|doors?|windows?|` +
 
 var properNounRules = []GrammarRule{
 	{
+		// Lowercase only, here and below. These rules exist to find the
+		// uncapitalised form, so folding their case -- which every other
+		// literal rule in the plugin wants -- makes them fire on the very
+		// spelling they are asking for. The corpus caught it on "Tuesday".
+		//
 		// The days have no other meaning at all, which makes them the one
 		// group here that needs no guard.
 		Pattern:     `\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b`,

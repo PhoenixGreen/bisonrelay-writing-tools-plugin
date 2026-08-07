@@ -123,34 +123,46 @@ var wordy = [][2]string{
 }
 
 // cliches are phrases that have been used so often they no longer carry the
-// image they were built on. No replacement is offered: there is no single
-// rewrite, and proposing one would be a worse cliche than the original.
-var cliches = []string{
-	"at the end of the day",
-	"think outside the box",
-	"low-hanging fruit",
-	"moving forward",
-	"going forward",
-	"touch base",
-	"circle back",
-	"at this juncture",
-	"needless to say",
-	"last but not least",
-	"in this day and age",
-	"the bottom line is",
-	"win-win",
-	"take it to the next level",
-	"boots on the ground",
-	"push the envelope",
-	"when all is said and done",
-	"few and far between",
-	"tip of the iceberg",
-	"par for the course",
-	"back to the drawing board",
-	"a level playing field",
-	"the elephant in the room",
-	"raise the bar",
-	"move the needle",
+// image they were built on, each with the plain phrase that says the same
+// thing.
+//
+// The replacements were left out of the first version of this file on the
+// grounds that there is no single rewrite for a cliche. That was true of some
+// of them and used as an excuse for all of them: most of these are worn
+// precisely because they are a long way of saying one ordinary word, and
+// "ultimately" for "at the end of the day" loses nothing at all.
+//
+// The two with an empty replacement are the ones where it really is true.
+// "The tip of the iceberg" and "the elephant in the room" are both carrying
+// an argument, not just a word, and the shortest honest replacement is a
+// clause that depends on what the sentence is about. Those are flagged and
+// left to the writer.
+var cliches = [][2]string{
+	{"at the end of the day", "ultimately"},
+	{"think outside the box", "think differently"},
+	{"low-hanging fruit", "the easy wins"},
+	{"moving forward", "from now on"},
+	{"going forward", "from now on"},
+	{"touch base", "talk"},
+	{"circle back", "follow up"},
+	{"at this juncture", "now"},
+	{"needless to say", "obviously"},
+	{"last but not least", "finally"},
+	{"in this day and age", "today"},
+	{"the bottom line is", "in short"},
+	{"win-win", "good for both sides"},
+	{"take it to the next level", "improve it"},
+	{"boots on the ground", "people on site"},
+	{"push the envelope", "go further"},
+	{"when all is said and done", "ultimately"},
+	{"few and far between", "rare"},
+	{"tip of the iceberg", ""},
+	{"par for the course", "typical"},
+	{"back to the drawing board", "start again"},
+	{"a level playing field", "fair conditions"},
+	{"the elephant in the room", ""},
+	{"raise the bar", "set a higher standard"},
+	{"move the needle", "make a difference"},
 }
 
 // participles are past participles distinctive enough that "was <participle>
@@ -186,19 +198,25 @@ func buildStyleRules() []GrammarRule {
 		})
 	}
 
-	for _, phrase := range cliches {
+	for _, pair := range cliches {
+		phrase, plain := pair[0], pair[1]
+		message, advice := "Overused phrase", "Saying it plainly usually "+
+			"lands better."
+		if plain != "" {
+			message = "Overused phrase -- try \"" + plain + "\""
+			advice = "\"" + plain + "\" says the same thing."
+		}
 		rules = append(rules, GrammarRule{
 			// Hyphens and other punctuation are escaped; the \b at the end is
 			// dropped for phrases ending in a non-word character, where it
 			// would never match.
 			Pattern:  `\b` + eitherCase(phrase) + wordBoundary(phrase),
-			Message:  "Overused phrase",
-			Suggest:  "",
+			Message:  message,
+			Suggest:  plain,
 			Flags:    []string{"we wrote " + phrase + " today"},
 			Category: "Style",
 			Explanation: "\"" + phrase + "\" is used so often that it no " +
-				"longer carries the picture it was built on. Saying it " +
-				"plainly usually lands better.",
+				"longer carries the picture it was built on. " + advice,
 			Severity: SeveritySuggestion,
 		})
 	}
@@ -209,7 +227,7 @@ func buildStyleRules() []GrammarRule {
 			// certain, and requiring it is a deliberate trade: most passive
 			// writing names no agent and goes unflagged here, which is the
 			// price of never flagging "I was interested" as passive.
-			Pattern: `\b(is|are|was|were|be|been|being)\s+(` + participles + `)\s+by\b`,
+			Pattern: `\b([iI]s|[aA]re|[wW]as|[wW]ere|[bB]e|[bB]een|[bB]eing)\s+(` + participles + `)\s+by\b`,
 			Message: "Passive voice",
 			Suggest: "",
 			Flags:   []string{"the post was written by someone else"},
@@ -217,26 +235,32 @@ func buildStyleRules() []GrammarRule {
 			// passive writing goes unflagged -- see the note above.
 			Leaves:   []string{"I was interested in the result"},
 			Category: "Style",
-			Explanation: "This sentence puts the thing acted on first and " +
-				"the actor last. Naming the actor first is usually shorter " +
-				"and clearer -- though the passive is right when the actor " +
-				"is unknown or beside the point.",
+			Explanation: "This sentence puts the thing acted on first " +
+				"and the actor last -- \"the post was written by Sam\" " +
+				"rather than \"Sam wrote the post\". Turning it round is " +
+				"usually shorter and clearer. No replacement is offered " +
+				"because the fix moves the words either side of this, " +
+				"which only you can do -- and the passive is right when " +
+				"the actor is unknown or beside the point.",
 			Severity: SeveritySuggestion,
 		},
 		GrammarRule{
 			// "Is being considered" is unambiguously passive with or without
 			// an agent: "being" before a participle admits no adjective
 			// reading.
-			Pattern:  `\b(is|are|was|were)\s+being\s+(\w+ed|` + participles + `)\b`,
+			Pattern:  `\b([iI]s|[aA]re|[wW]as|[wW]ere)\s+being\s+(\w+ed|` + participles + `)\b`,
 			Message:  "Passive voice",
 			Suggest:  "",
 			Flags:    []string{"the plan is being considered again"},
 			Leaves:   []string{"she was being careful about it"},
 			Category: "Style",
-			Explanation: "This sentence puts the thing acted on first and " +
-				"the actor last. Naming the actor first is usually shorter " +
-				"and clearer -- though the passive is right when the actor " +
-				"is unknown or beside the point.",
+			Explanation: "This sentence puts the thing acted on first " +
+				"and the actor last -- \"the post was written by Sam\" " +
+				"rather than \"Sam wrote the post\". Turning it round is " +
+				"usually shorter and clearer. No replacement is offered " +
+				"because the fix moves the words either side of this, " +
+				"which only you can do -- and the passive is right when " +
+				"the actor is unknown or beside the point.",
 			Severity: SeveritySuggestion,
 		},
 	)

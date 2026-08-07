@@ -137,8 +137,6 @@ var compoundRules = []GrammarRule{
 	},
 
 	// --- any/some/every + thing ---
-	// "Every body" is deliberately absent: a body is a thing that can be
-	// counted, and "every body in the room" is correct writing.
 	{
 		Pattern:     `\b([Aa])ny\s+thing\b`,
 		Flags:       []string{"is there any thing else"},
@@ -160,6 +158,34 @@ var compoundRules = []GrammarRule{
 		Flags:       []string{"every thing is ready"},
 		Message:     "Should be \"$1verything\"",
 		Suggest:     "$1verything",
+		Category:    "Grammar",
+		Explanation: explainCompound,
+	},
+	{
+		// "every body" was left out of this file for a long time on the
+		// grounds that a body is a countable thing, and "every body in the
+		// room" is correct writing. That was right about the exception and
+		// wrong about the rule: the exception is narrow enough to name.
+		//
+		// A literal body is nearly always followed by "of" (every body of
+		// water, of work, of evidence) or by a preposition placing it
+		// somewhere (in the room, on the field). Those are the antipatterns.
+		// Everywhere else, "every body" is "everybody" typed with a space.
+		Pattern: `\b([Ee])very\s+body\b`,
+		Antipatterns: []string{
+			`[Ee]very\s+body\s+(of|in|on|at|was|were|had|found|recovered)\b`,
+		},
+		Flags: []string{
+			"every body should know this",
+			"Every body agreed with the plan",
+		},
+		Leaves: []string{
+			"every body of water was tested",
+			"every body in the room agreed",
+			"every body of evidence points the same way",
+		},
+		Message:     "Should be \"$1verybody\"",
+		Suggest:     "$1verybody",
 		Category:    "Grammar",
 		Explanation: explainCompound,
 	},

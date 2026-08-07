@@ -274,6 +274,8 @@ var errorRules = []GrammarRule{
 		Explanation: "The pronoun \"I\" is always written as a capital, wherever it appears in a sentence. It is the only single-letter word in English that is.",
 	},
 	{
+		// Lowercase only: the point is the missing capital, so accepting
+		// "I'm" here would flag the correct spelling.
 		Pattern:     `\bi'(m|ve|ll|d)\b`,
 		Flags:       []string{"i'm going now"},
 		Message:     "\"I\" is capitalised",
@@ -286,7 +288,7 @@ var errorRules = []GrammarRule{
 	// Each of these is wrong in every context, unlike its/it's, which is
 	// exactly why those two are absent.
 	{
-		Pattern:     `\byour welcome\b`,
+		Pattern:     `\b[yY]our welcome\b`,
 		Flags:       []string{"your welcome to try"},
 		Message:     "Should be \"you're welcome\"",
 		Suggest:     "you're welcome",
@@ -294,7 +296,7 @@ var errorRules = []GrammarRule{
 		Explanation: "\"Your\" is a possessive, as in \"your wallet\". The phrase means \"you are welcome\", so it needs \"you're\".",
 	},
 	{
-		Pattern:     `\b(could|should|would|must|might)\s+of\b`,
+		Pattern:     `\b([cC]ould|[sS]hould|[wW]ould|[mM]ust|[mM]ight)\s+of\b`,
 		Flags:       []string{"we should of gone"},
 		Message:     "Should be \"$1 have\"",
 		Suggest:     "$1 have",
@@ -302,7 +304,7 @@ var errorRules = []GrammarRule{
 		Explanation: "\"Could of\" is a misreading of how \"could've\" sounds. The spoken contraction is short for \"could have\".",
 	},
 	{
-		Pattern:     `\balot\b`,
+		Pattern:     `\b[aA]lot\b`,
 		Flags:       []string{"thanks alot for that"},
 		Message:     "\"a lot\" is two words",
 		Suggest:     "a lot",
@@ -310,7 +312,7 @@ var errorRules = []GrammarRule{
 		Explanation: "\"A lot\" is always written as two words. \"Alot\" is not a word in English.",
 	},
 	{
-		Pattern:     `\beveryday (I|you|we|they|he|she|it)\b`,
+		Pattern:     `\b[eE]veryday (I|you|we|they|he|she|it)\b`,
 		Flags:       []string{"everyday I walk there"},
 		Leaves:      []string{"an everyday problem"},
 		Message:     "\"every day\" is two words as an adverb",
@@ -319,7 +321,7 @@ var errorRules = []GrammarRule{
 		Explanation: "\"Everyday\" as one word is an adjective meaning ordinary, as in \"an everyday problem\". Saying when something happens takes two words.",
 	},
 	{
-		Pattern:     `\bcant\b`,
+		Pattern:     `\b[cC]ant\b`,
 		Flags:       []string{"i cant do it"},
 		Message:     "Missing apostrophe",
 		Suggest:     "can't",
@@ -327,7 +329,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bwont\b`,
+		Pattern:     `\b[wW]ont\b`,
 		Flags:       []string{"it wont work"},
 		Message:     "Missing apostrophe",
 		Suggest:     "won't",
@@ -335,7 +337,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bdont\b`,
+		Pattern:     `\b[dD]ont\b`,
 		Flags:       []string{"i dont know"},
 		Message:     "Missing apostrophe",
 		Suggest:     "don't",
@@ -343,7 +345,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bdoesnt\b`,
+		Pattern:     `\b[dD]oesnt\b`,
 		Flags:       []string{"it doesnt work"},
 		Message:     "Missing apostrophe",
 		Suggest:     "doesn't",
@@ -351,7 +353,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bisnt\b`,
+		Pattern:     `\b[iI]snt\b`,
 		Flags:       []string{"it isnt ready"},
 		Message:     "Missing apostrophe",
 		Suggest:     "isn't",
@@ -359,7 +361,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bwasnt\b`,
+		Pattern:     `\b[wW]asnt\b`,
 		Flags:       []string{"it wasnt ready"},
 		Message:     "Missing apostrophe",
 		Suggest:     "wasn't",
@@ -367,7 +369,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bwouldnt\b`,
+		Pattern:     `\b[wW]ouldnt\b`,
 		Flags:       []string{"it wouldnt work"},
 		Message:     "Missing apostrophe",
 		Suggest:     "wouldn't",
@@ -375,7 +377,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bcouldnt\b`,
+		Pattern:     `\b[cC]ouldnt\b`,
 		Flags:       []string{"i couldnt tell"},
 		Message:     "Missing apostrophe",
 		Suggest:     "couldn't",
@@ -383,7 +385,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bshouldnt\b`,
+		Pattern:     `\b[sS]houldnt\b`,
 		Flags:       []string{"we shouldnt wait"},
 		Message:     "Missing apostrophe",
 		Suggest:     "shouldn't",
@@ -391,7 +393,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bthats\b`,
+		Pattern:     `\b[tT]hats\b`,
 		Flags:       []string{"thats the one"},
 		Message:     "Missing apostrophe",
 		Suggest:     "that's",
@@ -399,7 +401,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\bwhats\b`,
+		Pattern:     `\b[wW]hats\b`,
 		Flags:       []string{"whats the plan"},
 		Message:     "Missing apostrophe",
 		Suggest:     "what's",
@@ -407,7 +409,7 @@ var errorRules = []GrammarRule{
 		Explanation: "This is a contraction -- two words shortened into one -- and the apostrophe stands in for the letters that were dropped.",
 	},
 	{
-		Pattern:     `\blets\s+(go|see|say|try|talk|do|get|make)\b`,
+		Pattern:     `\b[lL]ets\s+(go|see|say|try|talk|do|get|make)\b`,
 		Flags:       []string{"lets go now"},
 		Message:     "Missing apostrophe",
 		Suggest:     "let's $1",
@@ -461,7 +463,7 @@ var errorRules = []GrammarRule{
 	// does not: "their" is a possessive, so a pronoun or a verb cannot follow
 	// it, whatever the sentence is about.
 	{
-		Pattern:     `\btheir\s+(is|are|was|were|will|would|has|have|had)\b`,
+		Pattern:     `\b[tT]heir\s+(is|are|was|were|will|would|has|have|had)\b`,
 		Flags:       []string{"their is a problem"},
 		Leaves:      []string{"their wallet is empty"},
 		Message:     "Should be \"there $1\"",
@@ -470,7 +472,7 @@ var errorRules = []GrammarRule{
 		Explanation: "\"Their\" is a possessive and has to own something, as in \"their wallet\". A verb or a pronoun cannot follow it, so this needs \"there\".",
 	},
 	{
-		Pattern:     `\btheir\s+(he|she|it|we|they|you)\b`,
+		Pattern:     `\b[tT]heir\s+(he|she|it|we|they|you)\b`,
 		Flags:       []string{"their he goes"},
 		Message:     "Should be \"there $1\"",
 		Suggest:     "there $1",
@@ -511,6 +513,27 @@ var errorRules = []GrammarRule{
 		Category:    "Confused words",
 		Explanation: "\"Its\" is a possessive, as in \"its balance\". What follows here cannot be owned, so this is the contraction of \"it is\" and needs an apostrophe.",
 	},
+	{
+		// The comparative is the other decidable position, and it is a
+		// different shape to the list above: it is not the word straight
+		// after "its" that gives it away but the "than" further on.
+		//
+		// "its worse" on its own could be a possessive before a noun, the
+		// way "its value" is. "its worse than I expected" cannot be: a
+		// comparative followed by "than" is doing the work of a verb
+		// phrase, and a possessive has nothing to own.
+		Pattern: `\b([Ii])ts\s+(worse|better|more|less|easier|harder|` +
+			`bigger|smaller|faster|slower|cheaper|closer|worth)\s+than\b`,
+		Flags: []string{
+			"and its worse than I expected",
+			"Its better than nothing",
+		},
+		Leaves:      []string{"its value fell more than expected"},
+		Message:     "Should be \"$1t's $2 than\"",
+		Suggest:     "$1t's $2 than",
+		Category:    "Confused words",
+		Explanation: "\"Its\" is a possessive, as in \"its balance\". A comparative followed by \"than\" is not something that can be owned, so this is \"it is\".",
+	},
 	// A rule for "its" before any -ing word was tried here and removed: it
 	// fired on "its funding", and English is full of -ing nouns -- funding,
 	// meaning, building, training -- that a possessive precedes perfectly
@@ -527,7 +550,7 @@ var errorRules = []GrammarRule{
 	},
 	{
 		// "there own" is never right: only the possessive can precede it.
-		Pattern:     `\bthere\s+(own|self|selves)\b`,
+		Pattern:     `\b[tT]here\s+(own|self|selves)\b`,
 		Flags:       []string{"they brought there own"},
 		Message:     "Should be \"their $1\"",
 		Suggest:     "their $1",
@@ -535,7 +558,7 @@ var errorRules = []GrammarRule{
 		Explanation: "\"There\" refers to a place or introduces a statement. Only the possessive \"their\" can precede this word.",
 	},
 	{
-		Pattern:     `\bthere\s+(is|are|was|were)\s+own\b`,
+		Pattern:     `\b[tT]here\s+(is|are|was|were)\s+own\b`,
 		Flags:       []string{"there is own equipment"},
 		Message:     "Should be \"their own\"",
 		Suggest:     "their own",

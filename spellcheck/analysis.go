@@ -71,18 +71,24 @@ var AnalysisChecks = []AnalysisCheck{
 		Message:     "\"$1\" used $2 times in this paragraph",
 		Category:    "Repetition",
 		Severity:    SeveritySuggestion,
-		Explanation: "Repeating a word in a short space makes writing feel flat. A synonym, a pronoun, or dropping the word altogether usually reads better -- though a technical term is often best repeated rather than varied for its own sake.",
+		Explanation: "Repeating a word in a short space makes writing feel flat. A pronoun or dropping the word altogether often reads better, and the thesaurus offers alternatives beside this -- though a technical term is usually best repeated rather than varied for its own sake.",
 	},
 	{
 		ID: CheckLongSentence,
 		// Thirty rather than the forty most tools use. Forty catches only
 		// sentences already past saving; thirty catches the ones still worth
 		// splitting, which is the point of saying anything.
-		Threshold:   30,
-		Message:     "Long sentence -- $2 words",
-		Category:    "Readability",
-		Severity:    SeveritySuggestion,
-		Explanation: "A sentence this long asks the reader to hold a lot at once. Splitting it at a natural break usually makes both halves easier to follow.",
+		Threshold: 30,
+		Message:   "Long sentence -- $2 words",
+		Category:  "Readability",
+		Severity:  SeveritySuggestion,
+		// No replacement is offered here or on the opener check, and it
+		// is worth being plain about why rather than looking incomplete.
+		// Both of these are answered by rewriting a sentence, and a
+		// rewrite has to know what the sentence is trying to say. What
+		// can be given instead is where to look, which is what the last
+		// line below does.
+		Explanation: "A sentence this long asks the reader to hold a lot at once. Look for the first \"and\", \"but\", \"which\" or semicolon in it: that is usually where two sentences were joined, and splitting there makes both halves easier to follow.",
 	},
 	{
 		ID:          CheckRepeatedOpener,
@@ -90,7 +96,7 @@ var AnalysisChecks = []AnalysisCheck{
 		Message:     "$2 sentences in a row start with \"$1\"",
 		Category:    "Repetition",
 		Severity:    SeveritySuggestion,
-		Explanation: "Consecutive sentences opening the same way give writing a monotonous rhythm. Varying how a sentence starts is usually enough to fix it.",
+		Explanation: "Consecutive sentences opening the same way give writing a monotonous rhythm. The usual fixes are to join two of them into one sentence, or to start one with what it is about rather than with who did it.",
 	},
 	{
 		ID: CheckUnpairedBrackets,
