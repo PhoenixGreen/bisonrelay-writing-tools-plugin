@@ -129,6 +129,19 @@ you do it, it works" and "Similarly designed products failed" are both correct a
 be broken by a comma. Numbers run through all of it: "1,000", "3:00" and "v1.2.3" are correct
 and common, so every rule is written to leave them alone.
 
+**Proper nouns.** Days, months, languages and nationalities take a capital wherever they
+appear, and the dictionary cannot help: "monday" and "english" are both in it, because the
+wordlist is lowercased when it is built. So the checker saw a word it knew and said nothing.
+
+The whole difficulty is which words are safe. A proper noun that is also an ordinary word
+cannot be corrected without knowing what the sentence means, so **March, May and August are
+absent** -- "we march on Friday", "it may rain" and "an august institution" are all correct.
+So are polish, welsh, czech and thai, and every bare country name, since china, turkey, chile
+and jersey are ordinary words too. The survivors that have a common-noun sense in some
+phrase are guarded by an antipattern instead: french fries, roman numerals, a dutch oven,
+turkish delight. A checker with an opinion on whether "french fries" wants a capital is a
+checker arguing with its user about lunch.
+
 **"A" against "an".** The rule everybody knows -- "an" before a vowel -- is about *sound*,
 and spelling only mostly agrees with it: "a unique opportunity" and "an hour" are both
 correct and both break it as usually stated. Nothing here can hear anything, so the letters
@@ -167,8 +180,11 @@ was interested" -- an `-ed` word after "was" is far more often an adjective than
 
 **Analysis checks.** Four checks a regex cannot express, because they count: a word used
 four or more times in one paragraph, a sentence over thirty words, three consecutive
-sentences opening with the same word, and both spellings of a variant pair (organise /
-organize) in one message. The plugin declares these rather than implementing them -- it
+sentences opening with the same word, and both spellings of a pair in one message. 56 pairs: the
+British-against-American ones (organise/organize, colour/color), and the forms that are both
+correct in the same English and still should not be mixed -- email/e-mail, cooperate/
+co-operate, percent/per cent. The two lists are kept apart because the first is also what the
+thesaurus reduces a British spelling through to reach WordNet, and "email" is not a locale. The plugin declares these rather than implementing them -- it
 names a check the app knows how to run and supplies the threshold, the wording and the
 explanation. Same division as the regexes, which the plugin also writes and never executes.
 An app that does not implement an id ignores it, so a check can ship here first.

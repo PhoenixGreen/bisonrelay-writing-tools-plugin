@@ -290,8 +290,12 @@ func wordBoundary(phrase string) string {
 // Pairs whose two spellings mean different things are deliberately absent --
 // licence/license and practise/practice differ by part of speech in British
 // English, programme/program and enquiry/inquiry differ in sense, and metre
-// and meter are separate words. Flagging those would be flagging correct
-// writing.
+// and meter are separate words. Flagging those would be flagging correct writing.
+//
+// Also absent, and for the same reason from the other direction: set-up
+// against setup, log-in against login, some day against someday and any
+// more against anymore. Each pair is a noun and a verb, or two different
+// meanings, so a message using both is usually right to.
 var VariantPairs = []string{
 	"organise|organize",
 	"organised|organized",
@@ -330,7 +334,45 @@ var VariantPairs = []string{
 	"aluminium|aluminum",
 	"judgement|judgment",
 	"acknowledgement|acknowledgment",
+	"focussed|focused",
+	"modelling|modeling",
+	"labelled|labeled",
+	"fulfil|fulfill",
+	"enrol|enroll",
+	"instil|instill",
+	"skilful|skillful",
 }
+
+// coherencyPairs are forms that are both correct in the same English, and
+// still should not be mixed inside one message.
+//
+// Kept apart from variantPairs, which is a list of British against American
+// and is also what the thesaurus reduces a British spelling through to reach
+// WordNet. Adding "email|e-mail" there would have told that lookup the two
+// were a locale pair, which they are not.
+var coherencyPairs = []string{
+	"email|e-mail",
+	"emails|e-mails",
+	"cooperate|co-operate",
+	"cooperation|co-operation",
+	"coordinate|co-ordinate",
+	"coordination|co-ordination",
+	"online|on-line",
+	"ebook|e-book",
+	"percent|per cent",
+	"okay|ok",
+	"benefited|benefitted",
+	"focused|focussed",
+}
+
+// consistencyPairs is everything the spelling-consistency check compares.
+//
+// Deliberately not the same thing as either list on its own: one is about
+// which English somebody writes and the other about which of two accepted
+// forms they picked, and the check does not care about the difference --
+// it only reports that a message used both.
+var consistencyPairs = append(append([]string{}, VariantPairs...),
+	coherencyPairs...)
 
 // SplitVariant is here so the pair format has exactly one reader; the app
 // parses the same strings and the two must agree on the separator.

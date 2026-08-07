@@ -109,6 +109,6 @@ var AnalysisChecks = []AnalysisCheck{
 		Category:    "Consistency",
 		Severity:    SeveritySuggestion,
 		Explanation: "Both spellings are correct, but mixing them in one message looks careless. Pick whichever you prefer and use it throughout.",
-		Values:      VariantPairs,
+		Values:      consistencyPairs,
 	},
 }

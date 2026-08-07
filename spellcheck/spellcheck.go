@@ -145,7 +145,7 @@ const domainTLDs = "com|org|net|edu|gov|mil|int|io|dev|app|xyz|info|biz|tv|" +
 // meant. The third is marked SeveritySuggestion and holds to a different
 // standard -- see the note at the top of rules_style.go.
 var Rules = concat(errorRules, confusionRules, compoundRules, articleRules,
-	punctuationRules, styleRules)
+	properNounRules, punctuationRules, styleRules)
 
 func concat(groups ...[]GrammarRule) []GrammarRule {
 	var all []GrammarRule

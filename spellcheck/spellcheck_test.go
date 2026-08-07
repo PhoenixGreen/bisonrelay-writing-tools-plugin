@@ -381,19 +381,23 @@ func TestSharedMessagesShareTheirCategory(t *testing.T) {
 	}
 }
 
-// An antipattern that matches nothing is an exception nobody notices has
-// stopped working: the rule simply gets noisier, and the only evidence is a
-// false positive somebody has to report.
+// TestAntipatternsAreReachable: every antipattern must match one of its own
+// rule's Leaves examples.
 //
-// This is the check a negative lookahead could never have -- glued onto the
-// end of a pattern, there is nothing to test on its own.
+// An exception that matches nothing is one nobody notices has stopped
+// working: the rule simply gets noisier, and the only evidence is a false
+// positive somebody has to report. This is the check a negative lookahead
+// could never have -- glued onto the end of a pattern, there is nothing to
+// test on its own.
+//
+// Against the rule's own examples rather than the shared corpus, which is
+// where this started. The corpus answers a different question -- does any
+// rule fire on ordinary writing -- and making it carry a sentence for every
+// exception in the plugin turned it into a list whose reason for each line
+// lived somewhere else. It also subsumes the separate "every antipattern has
+// a reason" check: a rule with antipatterns and no Leaves now fails here, by
+// name.
 func TestAntipatternsAreReachable(t *testing.T) {
-	// Checked against the corpus rather than a list of its own, so the two
-	// cannot drift. An exception exists to protect a reading, and a reading
-	// worth protecting is a line of correct writing -- which is what the
-	// corpus is. Adding an antipattern therefore means adding the sentence
-	// it is for, where the false-positive guard will also see it.
-
 	for i, r := range Rules {
 		for _, source := range r.Antipatterns {
 			anti, err := regexp.Compile(source)
@@ -403,27 +407,21 @@ func TestAntipatternsAreReachable(t *testing.T) {
 				continue
 			}
 			var matched bool
-			for _, text := range correctText {
+			for _, text := range r.Leaves {
 				if anti.MatchString(text) {
 					matched = true
 					break
 				}
 			}
 			if !matched {
-				t.Errorf("Rules[%d] (%q): antipattern %q matches nothing in "+
-					"the corpus -- add the sentence it is for, or the "+
-					"exception is dead", i, r.Message, source)
+				t.Errorf("Rules[%d] (%q): antipattern %q matches none of the "+
+					"rule's own Leaves examples -- add the reading it is for, "+
+					"or the exception is dead", i, r.Message, source)
 			}
 		}
 	}
 }
 
-// TestRuleExamples runs every rule against the text it carries with it.
-//
-// The point of attaching examples to a rule rather than keeping them in a
-// list is that a rule and its proof are edited together, so a pattern
-// tightened past the thing it was for fails immediately and by name. Every
-// bug found by hand in this plugin so far has been of that kind.
 func TestRuleExamples(t *testing.T) {
 	for i, r := range Rules {
 		if len(r.Flags) == 0 {
@@ -475,18 +473,6 @@ func TestRuleExamples(t *testing.T) {
 				t.Errorf("Rules[%d] (%q) fires on %q, which it must not",
 					i, r.Message, text)
 			}
-		}
-	}
-}
-
-// Every antipattern needs a reason on the record. One with no Leaves example
-// is an exception nobody can see the point of, and nobody will notice when
-// it stops working -- the only symptom is a rule quietly getting noisier.
-func TestAntipatternsHaveAReason(t *testing.T) {
-	for i, r := range Rules {
-		if len(r.Antipatterns) > 0 && len(r.Leaves) == 0 {
-			t.Errorf("Rules[%d] (%q) has %d antipattern(s) and no example of "+
-				"what they are protecting", i, r.Message, len(r.Antipatterns))
 		}
 	}
 }
