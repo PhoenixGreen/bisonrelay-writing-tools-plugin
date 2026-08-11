@@ -1,10 +1,6 @@
 package spellcheck
 
-import (
-	"regexp"
-	"strings"
-	"unicode"
-)
+import "strings"
 
 // rules_style.go holds the opinions: phrases that could be shorter, phrases
 // worn smooth by overuse, and the passive voice.
@@ -21,11 +17,6 @@ import (
 // wrong is a quieter mark in a place the reader went looking for opinions.
 // That is a different bargain from the one the error rules make, and these
 // rules would not be acceptable under the other one.
-
-// SeveritySuggestion marks a rule as an opinion rather than a mistake. Spelled
-// out here rather than as a bare string at every rule so a typo in it -- which
-// would silently promote a suggestion to an error -- cannot happen.
-const SeveritySuggestion = "suggestion"
 
 // wordy pairs a phrase with what it usually shortens to. Held as data rather
 // than as rule literals because there are ninety of them and they differ in
@@ -268,58 +259,6 @@ func buildStyleRules() []GrammarRule {
 	return rules
 }
 
-// eitherCase escapes a phrase for use in a pattern and lets its first letter
-// match in either case, so a phrase that opens a sentence is caught.
-//
-// These rules matter most at the start of a sentence -- "Due to the fact
-// that" and "At the end of the day" are where these phrases live -- and every
-// pattern in this plugin is case-sensitive, so without this the commonest
-// position for each of them is the one position it never fires in.
-//
-// Only the first letter: matching the rest either way would flag SHOUTED text
-// and acronyms embedded in words.
-func eitherCase(phrase string) string {
-	quoted := regexp.QuoteMeta(phrase)
-	first := rune(phrase[0])
-	lower, upper := unicode.ToLower(first), unicode.ToUpper(first)
-	if lower == upper {
-		return quoted
-	}
-	return "[" + string(lower) + string(upper) + "]" + quoted[1:]
-}
-
-// wordBoundary returns `\b` only where it can match: a phrase ending in a
-// non-word character ("win-win" does not, but a hyphenated one might) has no
-// word boundary after it, and appending one there makes a rule that can never
-// fire -- which nothing else would notice.
-func wordBoundary(phrase string) string {
-	if phrase == "" {
-		return ""
-	}
-	last := phrase[len(phrase)-1]
-	isWord := last == '_' ||
-		(last >= 'a' && last <= 'z') ||
-		(last >= 'A' && last <= 'Z') ||
-		(last >= '0' && last <= '9')
-	if isWord {
-		return `\b`
-	}
-	return ""
-}
-
-// variantPairs are spellings of one word that are both correct but should not
-// be mixed inside a single message. Ordered British first, though the check
-// takes no side: it reports that two were used, not that either is wrong.
-//
-// Pairs whose two spellings mean different things are deliberately absent --
-// licence/license and practise/practice differ by part of speech in British
-// English, programme/program and enquiry/inquiry differ in sense, and metre
-// and meter are separate words. Flagging those would be flagging correct writing.
-//
-// Also absent, and for the same reason from the other direction: set-up
-// against setup, log-in against login, some day against someday and any
-// more against anymore. Each pair is a noun and a verb, or two different
-// meanings, so a message using both is usually right to.
 var VariantPairs = []string{
 	"organise|organize",
 	"organised|organized",

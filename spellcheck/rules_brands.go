@@ -1,9 +1,6 @@
 package spellcheck
 
-import (
-	"strings"
-	"unicode"
-)
+import "strings"
 
 // rules_brands.go capitalises the names that carry a capital in the middle,
 // or in the case of "iOS" at the start of a word that then goes up.
@@ -74,30 +71,4 @@ func buildBrandRules() []GrammarRule {
 		})
 	}
 	return rules
-}
-
-// wrongCasings returns the spellings of name that differ from it only in
-// case: all lower, all upper, and first-letter-up with the rest lower.
-//
-// Derived rather than listed so that adding a name cannot introduce a rule
-// that asks for a spelling it does not catch, or catches the correct one.
-// The canonical form is removed at the end, which is what keeps "iOS" from
-// flagging "iOS" -- its upper-case form is itself.
-func wrongCasings(name string) []string {
-	lower := strings.ToLower(name)
-	variants := []string{
-		lower,
-		strings.ToUpper(name),
-		string(unicode.ToUpper(rune(lower[0]))) + lower[1:],
-	}
-	seen := map[string]bool{name: true}
-	out := make([]string, 0, len(variants))
-	for _, v := range variants {
-		if seen[v] {
-			continue
-		}
-		seen[v] = true
-		out = append(out, v)
-	}
-	return out
 }

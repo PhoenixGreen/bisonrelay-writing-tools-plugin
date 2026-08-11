@@ -1,10 +1,5 @@
 package spellcheck
 
-import (
-	"strings"
-	"unicode"
-)
-
 // rules_articles.go is "a" against "an".
 //
 // The rule everybody knows -- "an" before a vowel -- is about *sound*, and
@@ -82,29 +77,6 @@ var articleRules = []GrammarRule{
 		Category:    "Grammar",
 		Explanation: explainArticle,
 	},
-}
-
-// eitherCaseAlternation joins stems into one alternation, letting each
-// begin in either case.
-//
-// "European" is capitalised and "euro" is not, and both take "a". Dart's
-// regex engine has no inline case-insensitivity -- it is an ECMAScript
-// engine, and the flag is on the pattern object rather than in the source
-// -- so the alternative is to write every stem twice. Doing it here means
-// the lists above stay readable and cannot be half-converted.
-func eitherCaseAlternation(stems []string) string {
-	out := make([]string, 0, len(stems))
-	for _, stem := range stems {
-		first := rune(stem[0])
-		lower, upper := unicode.ToLower(first), unicode.ToUpper(first)
-		if lower == upper {
-			out = append(out, stem)
-			continue
-		}
-		out = append(out,
-			"["+string(lower)+string(upper)+"]"+stem[1:])
-	}
-	return strings.Join(out, "|")
 }
 
 // pluralAfterA pairs a plural with the singular "a" wanted, for the rules
