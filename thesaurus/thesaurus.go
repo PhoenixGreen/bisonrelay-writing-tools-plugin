@@ -44,6 +44,13 @@ type Sense struct {
 type Definition struct {
 	PartOfSpeech string `json:"pos"`
 	Text         string `json:"text"`
+
+	// Example is one sentence using the word in this sense, or empty when
+	// the source had none. WordNet carries an example for 28% of its
+	// synsets and they were being discarded; for a writing tool the example
+	// is often the more useful half, since "marked by good fortune" settles
+	// less than "a felicitous life" does.
+	Example string `json:"example,omitempty"`
 }
 
 // Entry is everything known about one word. It mirrors the thesaurus
@@ -189,7 +196,11 @@ func (idx *Index) Lookup(word string) (Entry, bool) {
 	return entry, !entry.IsEmpty()
 }
 
-// parseDefinitions reads one generated line: word|pos:text|pos:text
+// parseDefinitions reads one generated line:
+// word|pos:text~example|pos:text
+//
+// The example is optional and absent for most senses. A line written before
+// examples existed has no tilde and parses to the same thing it always did.
 func parseDefinitions(line string) []Definition {
 	parts := strings.Split(line, "|")
 	if len(parts) < 2 {
@@ -197,13 +208,18 @@ func parseDefinitions(line string) []Definition {
 	}
 	var out []Definition
 	for _, raw := range parts[1:] {
-		pos, text, found := strings.Cut(raw, ":")
-		if !found || strings.TrimSpace(text) == "" {
+		pos, body, found := strings.Cut(raw, ":")
+		if !found || strings.TrimSpace(body) == "" {
+			continue
+		}
+		text, example, _ := strings.Cut(body, "~")
+		if strings.TrimSpace(text) == "" {
 			continue
 		}
 		out = append(out, Definition{
 			PartOfSpeech: pos,
 			Text:         strings.TrimSpace(text),
+			Example:      strings.TrimSpace(example),
 		})
 	}
 	return out

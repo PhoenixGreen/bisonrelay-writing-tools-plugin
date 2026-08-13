@@ -14,8 +14,14 @@
 # Written by hand, and short on purpose: each says what the word does in a
 # sentence, because that is what these words have instead of a meaning.
 #
-# Format matches the generated files: word|pos:definition
-# Merged into definitions.txt by tools/mkdefs.
+# The same file also carries vocabulary WordNet is simply too old to have.
+# WordNet 3.1 was published in 2011; SCOWL knows "blockchain", "smartphone"
+# and "ransomware" as spellings, so they pass the spell check and then have
+# nothing behind them when somebody looks one up. Those are gathered under
+# their own heading at the foot of this file.
+#
+# Format matches the generated files: word|pos:definition~example
+# The example is optional. Merged into definitions.txt by tools/mkdefs.
 
 # --- articles and determiners ---
 the|det:used before a noun to refer to something already known or being specified
@@ -260,3 +266,88 @@ when|adv:at what time, or at the time that
 where|adv:in what place, or in the place that
 why|adv:for what reason
 how|adv:in what way, or to what extent
+
+# --- computing and the internet ---
+#
+# WordNet 3.1 predates most of these, or holds only an older sense: it has
+# "web" as a spider's and "cloud" as weather. A wordlist that accepts the
+# spelling and a dictionary that says nothing about it is the worst of both.
+smartphone|noun:a mobile phone that runs apps and connects to the internet~she read the message on her smartphone
+app|noun:a program written for a phone or tablet~a banking app
+selfie|noun:a photograph somebody has taken of themselves~he posted a selfie from the summit
+emoji|noun:a small picture used in text to carry tone or a reaction~she ended the message with a laughing emoji
+hashtag|noun:a word marked with # to label what a message is about~the post used the hashtag sparingly
+meme|noun:an image or phrase copied and varied as it spreads online~the joke became a meme within a day
+podcast|noun:an audio programme published for downloading~a weekly podcast about typography
+streaming|noun:playing audio or video as it arrives rather than after downloading it~streaming cut out when the line dropped
+username|noun:the name an account is known by~pick a username nobody else has taken
+login|noun:the act of identifying yourself to a system, or the details used to do it~the login failed twice
+password|noun:a secret string proving you are entitled to an account~change the password on any device you have lost
+passphrase|noun:a password made of several words, chosen to be long rather than cryptic~a passphrase is easier to remember and harder to guess
+browser|noun:a program for reading pages on the web~open the link in another browser
+website|noun:a set of related pages published at one address~the website was down all morning
+webpage|noun:a single document on the web~the webpage would not load
+email|noun:a message sent electronically, or the system carrying it~send it by email
+inbox|noun:where arriving messages are collected~an inbox nobody has read in weeks
+spam|noun:unwanted messages sent in bulk~most of it was spam
+phishing|noun:messages that imitate somebody trustworthy to steal credentials~the email was phishing, not the bank
+malware|noun:software written to damage a computer or take what is on it~the file turned out to be malware
+ransomware|noun:malware that encrypts your files and demands payment for them~ransomware took the hospital offline
+firewall|noun:something that filters what may reach a computer over a network~the firewall blocked the connection
+encryption|noun:turning a message into a form only the intended reader can undo~end-to-end encryption
+decrypt|verb:turn an encrypted message back into readable form~only she could decrypt it
+metadata|noun:information about a message rather than its contents: who, when, how large~metadata is often as revealing as the message
+bandwidth|noun:how much a connection can carry in a given time~a video call needs more bandwidth than a chat
+offline|adj:not connected to a network~the client works offline and sends when it reconnects
+online|adj:connected to a network~she was online for a few minutes
+download|verb:copy something from a remote system to your own~download it before the flight
+upload|verb:copy something from your own system to a remote one~the upload finished overnight
+wifi|noun:a wireless local network connection~the wifi in the cafe was unusable
+router|noun:a device passing traffic between networks~restart the router
+server|noun:a computer that answers requests from others~the server stopped responding
+backup|noun:a spare copy kept in case the original is lost~restore from the backup
+plugin|noun:an optional component adding a feature to a program~install the plugin from Settings
+firmware|noun:software stored in a device, below the programs it runs~a firmware update
+opensource|adj:published so anybody may read, change and share the source~an open-source client
+sandbox|noun:a restricted space a program runs in so it cannot reach the rest of the system~the plugin runs in a sandbox
+proxy|noun:something requests are routed through on your behalf~traffic goes out through a proxy
+vpn|noun:an encrypted tunnel carrying your traffic through another network~he left the VPN on
+tor|noun:a network that hides who is talking to whom by relaying traffic~Bison Relay can route through Tor
+
+# --- cryptocurrency and Decred ---
+#
+# The vocabulary of the app's own subject. A user writing about a proposal or
+# a stake pool should not find the words underlined and unexplained.
+cryptocurrency|noun:money issued and transferred by a network rather than a state~he was paid in cryptocurrency
+crypto|noun:cryptocurrency, or cryptography, depending on who is speaking~crypto has meant two different things for a decade
+blockchain|noun:a shared record of transactions, added to in blocks and hard to alter~every node keeps the whole blockchain
+bitcoin|noun:the first cryptocurrency, and the network carrying it~the amount was quoted in bitcoin
+decred|noun:a cryptocurrency whose holders govern it by voting with their stake~Decred pays for its own development
+wallet|noun:software holding the keys that let you spend a balance~restore the wallet from its seed
+seed|noun:the words a wallet can be rebuilt from~write the seed down and keep it off any computer
+ledger|noun:the record of who holds what~the ledger is public
+node|noun:a computer taking part in a network and keeping its own copy~run your own node
+peer|noun:another participant you talk to directly, without a server between~peers exchange messages directly
+mining|noun:doing work to add blocks and earn the reward for it~mining secures the chain
+staking|noun:locking coins to take part in validating or governing a network~staking pays a return and carries a vote
+stake|noun:coins committed in order to vote or validate~her stake was locked for the ballot
+ticket|noun:in Decred, a stake commitment that grants a vote~the ticket was called to vote
+governance|noun:how a project's decisions are made and by whom~on-chain governance
+proposal|noun:a plan put to a vote, usually asking for funding~the proposal passed with 80% approval
+treasury|noun:funds the project holds and spends by vote~paid from the treasury
+dao|noun:an organisation run by rules its members vote on~the DAO funded the work
+fork|noun:a split in a network's rules, or a copy of a project taken in a new direction~a contentious fork
+hash|noun:a short fixed-length value standing for some data~the file's hash
+key|noun:the secret proving you may spend or sign~never share a private key
+signature|noun:proof a message came from the holder of a key~the signature checked out
+transaction|noun:a transfer recorded on a chain~the transaction confirmed in a minute
+confirmation|noun:a block accepting a transaction, making it harder to reverse~wait for six confirmations
+fee|noun:what is paid to have a transaction included~fees rise when the network is busy
+address|noun:where funds may be sent~he pasted the wrong address
+atom|noun:the smallest unit of a decred~amounts are stored in atoms
+lightning|noun:a network of payment channels settling off-chain~paid over Lightning
+channel|noun:a funded connection two parties settle payments through~open a channel first
+onchain|adj:recorded on the blockchain itself~an on-chain vote
+offchain|adj:handled outside the blockchain, settled to it later~off-chain messages
+custodial|adj:held on your behalf by somebody else~a custodial wallet is somebody else's promise
+noncustodial|adj:held by you alone, with no third party able to spend it~non-custodial by default
