@@ -51,6 +51,10 @@ import (
 const (
 	wordnetDir       = "data/wordnet"
 	functionWordFile = "data/function-words.txt"
+	// cntlistFile holds how often each sense was actually used in WordNet's
+	// tagged corpus. index.<pos> ranks senses *within* a part of speech and
+	// says nothing about which part of speech a word usually is; this does.
+	cntlistFile = "cntlist.rev"
 )
 
 // maxDefinitions caps how many senses a word keeps. WordNet gives "run" over
@@ -91,12 +95,19 @@ type definition struct {
 // selecting the word meant. One of each first is also how a dictionary is
 // laid out, and for a word that is only ever one part of speech it changes
 // nothing.
-func pick(senses map[string][]definition) []definition {
+//
+// [order] is the parts of speech most-used first, from cntlist.rev. Without
+// it round-robin still put nouns first always, which is right for "bank" and
+// "set" and wrong for "go", "take" and "run" -- words that are overwhelmingly
+// verbs and led with a noun sense nobody wanted. A word the corpus never
+// tagged keeps the declared order, which is the old behaviour for the 100,000
+// headwords too rare to have been tagged at all.
+func pick(senses map[string][]definition, order []string) []definition {
 	var out []definition
 	for round := 0; len(out) < maxDefinitions; round++ {
 		var added bool
-		for _, pf := range posFiles {
-			list := senses[pf.pos]
+		for _, pos := range order {
+			list := senses[pos]
 			if round >= len(list) {
 				continue
 			}
@@ -109,6 +120,75 @@ func pick(senses map[string][]definition) []definition {
 		if !added {
 			break
 		}
+	}
+	return out
+}
+
+// posOrder is the parts of speech for one word, most-used first.
+//
+// Ties and absences keep the declared order, so this only ever moves a part
+// of speech that the corpus positively says is the more used one.
+func posOrder(counts map[string]int) []string {
+	order := make([]string, 0, len(posFiles))
+	for _, pf := range posFiles {
+		order = append(order, pf.pos)
+	}
+	if len(counts) == 0 {
+		return order
+	}
+	sort.SliceStable(order, func(i, j int) bool {
+		return counts[order[i]] > counts[order[j]]
+	})
+	return order
+}
+
+// readCounts totals how often each part of speech of each word was used.
+//
+// cntlist.rev is one line per sense: "go%2:38:00:: 1 25" -- the lemma, a
+// "%", the part-of-speech digit, and after the sense number the count. The
+// digits are WordNet's: 1 noun, 2 verb, 3 adjective, 4 adverb, 5 adjective
+// satellite, which is an adjective for this purpose.
+func readCounts(path string) map[string]map[string]int {
+	f, err := os.Open(path)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "mkdefs:", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
+	out := map[string]map[string]int{}
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		fields := strings.Fields(sc.Text())
+		if len(fields) < 3 {
+			continue
+		}
+		lemma, rest, ok := strings.Cut(fields[0], "%")
+		if !ok || rest == "" {
+			continue
+		}
+		var pos string
+		switch rest[0] {
+		case '1':
+			pos = "noun"
+		case '2':
+			pos = "verb"
+		case '3', '5':
+			pos = "adj"
+		case '4':
+			pos = "adv"
+		default:
+			continue
+		}
+		n, err := strconv.Atoi(fields[2])
+		if err != nil {
+			continue
+		}
+		lemma = strings.ToLower(lemma)
+		if out[lemma] == nil {
+			out[lemma] = map[string]int{}
+		}
+		out[lemma][pos] += n
 	}
 	return out
 }
@@ -144,9 +224,15 @@ func main() {
 			})
 	}
 
+	counts := readCounts(filepath.Join(wordnetDir, cntlistFile))
 	entries := map[string][]definition{}
+	var reordered int
 	for word, senses := range byPos {
-		entries[word] = pick(senses)
+		order := posOrder(counts[word])
+		if len(order) > 0 && order[0] != posFiles[0].pos && len(senses) > 1 {
+			reordered++
+		}
+		entries[word] = pick(senses, order)
 	}
 
 	// Merged last and allowed to win: a hand-written gloss for "will" is
@@ -186,8 +272,9 @@ func main() {
 		fmt.Fprintln(out, b.String())
 	}
 	fmt.Fprintf(os.Stderr,
-		"mkdefs: %d words, %d definitions (%d with an example) from %d synsets (+%d hand-written)\n",
-		len(words), written, examples, synsets, added)
+		"mkdefs: %d words, %d definitions (%d with an example) from %d synsets "+
+			"(+%d hand-written, %d led by something other than a noun)\n",
+		len(words), written, examples, synsets, added, reordered)
 }
 
 // clean makes one field safe for the line format. A pipe separates senses, a
