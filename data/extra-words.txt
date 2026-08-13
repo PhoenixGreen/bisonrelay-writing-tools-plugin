@@ -139,3 +139,12 @@ ethereum
 monero
 litecoin
 dogecoin
+
+# --- ordinary computing words SCOWL does not carry ---
+# Each has a gloss in data/function-words.txt, and a definition for a word
+# the checker underlines is the worst of both.
+webpage
+decrypt
+offline
+vpn
+dao

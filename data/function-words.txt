@@ -308,7 +308,6 @@ server|noun:a computer that answers requests from others~the server stopped resp
 backup|noun:a spare copy kept in case the original is lost~restore from the backup
 plugin|noun:an optional component adding a feature to a program~install the plugin from Settings
 firmware|noun:software stored in a device, below the programs it runs~a firmware update
-opensource|adj:published so anybody may read, change and share the source~an open-source client
 sandbox|noun:a restricted space a program runs in so it cannot reach the rest of the system~the plugin runs in a sandbox
 proxy|noun:something requests are routed through on your behalf~traffic goes out through a proxy
 vpn|noun:an encrypted tunnel carrying your traffic through another network~he left the VPN on
