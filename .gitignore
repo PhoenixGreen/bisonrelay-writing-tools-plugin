@@ -11,5 +11,6 @@ common-en-GB.txt
 thesaurus.txt
 definitions.txt
 exceptions.txt
+inflections.txt
 
 .DS_Store

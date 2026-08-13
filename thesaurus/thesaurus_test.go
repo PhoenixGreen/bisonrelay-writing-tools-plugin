@@ -31,7 +31,7 @@ zebras|zebra
 `
 
 func TestLookupFindsEntries(t *testing.T) {
-	idx := NewIndex(sample, defs, exc)
+	idx := NewIndex(sample, defs, exc, "")
 	if idx.Len() != 4 {
 		t.Fatalf("Len() = %d, want 4 (comment lines must not be indexed)", idx.Len())
 	}
@@ -61,7 +61,7 @@ func TestLookupFindsEntries(t *testing.T) {
 // The first and last entries are where a binary search over line offsets
 // goes wrong if the bounds are off by one.
 func TestLookupFindsBoundaryEntries(t *testing.T) {
-	idx := NewIndex(sample, defs, exc)
+	idx := NewIndex(sample, defs, exc, "")
 	for _, word := range []string{"apple", "zebra"} {
 		if _, ok := idx.Lookup(word); !ok {
 			t.Errorf("Lookup(%q) found nothing", word)
@@ -72,7 +72,7 @@ func TestLookupFindsBoundaryEntries(t *testing.T) {
 // Senses must stay apart: pooling "bank"'s money and river synonyms into one
 // list is what makes a thesaurus give confidently wrong advice.
 func TestLookupKeepsSensesSeparate(t *testing.T) {
-	idx := NewIndex(sample, defs, exc)
+	idx := NewIndex(sample, defs, exc, "")
 	got, ok := idx.Lookup("bank")
 	if !ok {
 		t.Fatal("Lookup(bank) found nothing")
@@ -91,7 +91,7 @@ func TestLookupKeepsSensesSeparate(t *testing.T) {
 }
 
 func TestLookupMisses(t *testing.T) {
-	idx := NewIndex(sample, defs, exc)
+	idx := NewIndex(sample, defs, exc, "")
 	// Words before, between and after the entries, plus the empty string:
 	// each is a different way for a binary search to land wrongly. None
 	// appears in either dataset.
@@ -103,7 +103,7 @@ func TestLookupMisses(t *testing.T) {
 }
 
 func TestLookupIsCaseAndSpaceInsensitive(t *testing.T) {
-	idx := NewIndex(sample, defs, exc)
+	idx := NewIndex(sample, defs, exc, "")
 	for _, word := range []string{"Happy", "HAPPY", "  happy  "} {
 		if _, ok := idx.Lookup(word); !ok {
 			t.Errorf("Lookup(%q) found nothing", word)
@@ -112,7 +112,7 @@ func TestLookupIsCaseAndSpaceInsensitive(t *testing.T) {
 }
 
 func TestNewIndexHandlesNoTrailingNewline(t *testing.T) {
-	idx := NewIndex("apple|noun:fruit", "", "")
+	idx := NewIndex("apple|noun:fruit", "", "", "")
 	if idx.Len() != 1 {
 		t.Fatalf("Len() = %d, want 1", idx.Len())
 	}
@@ -122,7 +122,7 @@ func TestNewIndexHandlesNoTrailingNewline(t *testing.T) {
 }
 
 func TestLookupReturnsDefinitions(t *testing.T) {
-	idx := NewIndex(sample, defs, exc)
+	idx := NewIndex(sample, defs, exc, "")
 	if idx.DefinitionsLen() != 3 {
 		t.Fatalf("DefinitionsLen() = %d, want 3", idx.DefinitionsLen())
 	}
@@ -152,7 +152,7 @@ func TestLookupReturnsDefinitions(t *testing.T) {
 // built from different sources and cover different vocabularies -- so a
 // half-answer has to be a real answer rather than a miss.
 func TestLookupAnswersFromEitherDatasetAlone(t *testing.T) {
-	idx := NewIndex(sample, defs, exc)
+	idx := NewIndex(sample, defs, exc, "")
 
 	got, ok := idx.Lookup("otter")
 	if !ok {
@@ -174,7 +174,7 @@ func TestLookupAnswersFromEitherDatasetAlone(t *testing.T) {
 // An index built without a definitions dataset is what an older generated
 // build looks like, and must still answer from the synonyms.
 func TestLookupWithoutDefinitions(t *testing.T) {
-	idx := NewIndex(sample, "", "")
+	idx := NewIndex(sample, "", "", "")
 	got, ok := idx.Lookup("happy")
 	if !ok {
 		t.Fatal("Lookup(happy) found nothing")

@@ -80,6 +80,13 @@ var definitionsGZ []byte
 //go:embed exceptions.txt.gz
 var exceptionsGZ []byte
 
+// The forms each word takes -- go/goes/went/gone, child/children. The same
+// knowledge as exceptions.txt pointed the other way, plus the regular forms
+// that WordNet has no list for because its rules generate them. 168KB.
+//
+//go:embed inflections.txt.gz
+var inflectionsGZ []byte
+
 // gunzip decompresses an embedded dataset. A failure here means the module
 // was built wrong rather than that anything went wrong at runtime, so the
 // caller degrades to having no data rather than trying to recover.
@@ -104,7 +111,8 @@ var thesaurusIndex *thesaurus.Index
 func lookupIndex() *thesaurus.Index {
 	if thesaurusIndex == nil {
 		thesaurusIndex = thesaurus.NewIndex(
-			gunzip(thesaurusGZ), gunzip(definitionsGZ), gunzip(exceptionsGZ))
+			gunzip(thesaurusGZ), gunzip(definitionsGZ), gunzip(exceptionsGZ),
+			gunzip(inflectionsGZ))
 	}
 	return thesaurusIndex
 }

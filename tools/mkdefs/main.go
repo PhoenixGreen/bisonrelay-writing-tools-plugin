@@ -129,6 +129,7 @@ func main() {
 				if !usableHeadword(word) {
 					return
 				}
+				word = headwordText(word)
 				for _, off := range offsets {
 					g, ok := glosses[off]
 					if !ok {
@@ -375,17 +376,52 @@ func mergeFunctionWords(entries map[string][]definition) int {
 	return added
 }
 
-// usableHeadword keeps only words a lookup could be triggered on: a single,
-// purely alphabetic token. WordNet writes multi-word entries with
-// underscores, which this rejects along with everything else.
+// maxPhraseWords caps how long a headword may be.
+//
+// Three. WordNet carries entries of six and seven words -- "arteria
+// gastrica sinistra", "American Federation of Labor" -- and a lookup is
+// triggered by a selection, so an entry longer than anybody would select is
+// weight in the file and nothing else. Two and three cover the phrasal
+// verbs and compounds that are actually looked up: "take off", "give up
+// on", "wedding ring".
+const maxPhraseWords = 3
+
+// usableHeadword keeps what a lookup could actually be triggered on: one to
+// three alphabetic words.
+//
+// WordNet writes a multi-word entry with underscores, and those used to be
+// rejected outright -- which discarded 64,246 headwords, 43% of its
+// vocabulary, and left the tool with nothing to say about "take off" or "in
+// spite of". Those are exactly the constructions somebody still learning
+// English looks up, so they are kept now and the underscores become spaces.
 func usableHeadword(w string) bool {
 	if w == "" {
 		return false
 	}
+	// WordNet joins a phrase's words with underscores and MyThes with
+	// spaces; both are read here so the two generators can share this.
+	words := 1
 	for _, r := range w {
-		if r < 'a' || r > 'z' {
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r == '_' || r == ' ':
+			words++
+			if words > maxPhraseWords {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	for _, bad := range []string{"_", " ", "__", "  ", "_ ", " _"} {
+		if strings.HasPrefix(w, bad) || strings.HasSuffix(w, bad) ||
+			strings.Contains(w, "__") || strings.Contains(w, "  ") {
 			return false
 		}
 	}
 	return true
 }
+
+// headwordText is the form a headword is stored and looked up under: the
+// words as somebody would type them.
+func headwordText(w string) string { return strings.ReplaceAll(w, "_", " ") }

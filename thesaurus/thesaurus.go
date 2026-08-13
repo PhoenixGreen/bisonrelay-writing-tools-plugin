@@ -60,11 +60,22 @@ type Entry struct {
 	Word        string       `json:"word"`
 	Senses      []Sense      `json:"senses"`
 	Definitions []Definition `json:"definitions,omitempty"`
+
+	// Inflections are the other forms the word takes: go/goes/went/gone,
+	// child/children, happy/happier/happiest. Empty for a word that does not
+	// inflect, and for a phrase.
+	//
+	// The same knowledge that reduces a word for lookup, pointed the other
+	// way. It was held in one direction only, so the tool could find "child"
+	// from "children" and could not say that "child" becomes "children".
+	Inflections []string `json:"inflections,omitempty"`
 }
 
 // IsEmpty reports whether the entry says nothing, which is the ordinary
 // outcome for a name, a typo, or a word neither dataset covers.
 func (e Entry) IsEmpty() bool {
+	// Inflections alone are not an answer: a list of forms with nothing
+	// said about the word is a worse result than admitting there is none.
 	return len(e.Senses) == 0 && len(e.Definitions) == 0
 }
 
@@ -130,14 +141,16 @@ type Index struct {
 	synonyms    lines
 	definitions lines
 	exceptions  lines
+	inflections lines
 }
 
 // NewIndex scans the datasets once for line boundaries. Any of them may be
 // empty, which yields an index that answers from whatever is left.
-func NewIndex(synonymData, definitionData, exceptionData string) *Index {
+func NewIndex(synonymData, definitionData, exceptionData, inflectionData string) *Index {
 	return &Index{
 		synonyms:    newLines(synonymData),
 		definitions: newLines(definitionData),
+		inflections: newLines(inflectionData),
 		exceptions:  newLines(exceptionData),
 	}
 }
@@ -161,7 +174,10 @@ func (idx *Index) DefinitionsLen() int { return len(idx.definitions.starts) }
 // for "child" should be told so rather than left to wonder whether the
 // definition is really about the word they picked.
 func (idx *Index) Lookup(word string) (Entry, bool) {
-	word = strings.ToLower(strings.TrimSpace(word))
+	// Collapsed as well as trimmed: a selection dragged across a line break
+	// arrives with a newline in the middle of it, and the datasets are keyed
+	// by single spaces.
+	word = strings.ToLower(strings.Join(strings.Fields(word), " "))
 	if word == "" {
 		return Entry{}, false
 	}
@@ -193,6 +209,14 @@ func (idx *Index) Lookup(word string) (Entry, bool) {
 			break
 		}
 	}
+	// Inflections are looked up under whichever form actually answered, so
+	// asking about "children" lists child/children rather than nothing.
+	if line, ok := idx.inflections.find(entry.Word); ok {
+		if _, forms, found := strings.Cut(line, "|"); found {
+			entry.Inflections = splitList(forms)
+		}
+	}
+
 	return entry, !entry.IsEmpty()
 }
 

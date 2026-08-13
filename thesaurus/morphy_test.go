@@ -35,7 +35,7 @@ went|go
 
 func lookup(t *testing.T, word string) (Entry, bool) {
 	t.Helper()
-	return NewIndex("", wordnet, irregular).Lookup(word)
+	return NewIndex("", wordnet, irregular, "").Lookup(word)
 }
 
 func TestLookupReducesInflections(t *testing.T) {
@@ -106,7 +106,7 @@ func TestLookupRejectsGuessesThatMissed(t *testing.T) {
 // An index with no exception list still reduces what the suffix rules can
 // reach, so an older generated build degrades rather than breaking.
 func TestLookupWithoutExceptions(t *testing.T) {
-	idx := NewIndex("", wordnet, "")
+	idx := NewIndex("", wordnet, "", "")
 	if entry, ok := idx.Lookup("cats"); !ok || entry.Word != "cat" {
 		t.Errorf(`Lookup("cats") = %q, %v; want "cat"`, entry.Word, ok)
 	}
@@ -124,7 +124,7 @@ she|pron:a female person
 they|pron:people already mentioned
 wouldn't|verb:short for "would not"
 `
-	idx := NewIndex("", glossed, irregular)
+	idx := NewIndex("", glossed, irregular, "")
 
 	// A hand-written gloss wins outright, and is not reduced away.
 	for _, word := range []string{"can't", "wouldn't"} {
@@ -155,7 +155,7 @@ func TestLookupFoldsTypographicApostrophes(t *testing.T) {
 	const glossed = `can't|verb:short for "cannot"
 they|pron:people already mentioned
 `
-	idx := NewIndex("", glossed, "")
+	idx := NewIndex("", glossed, "", "")
 
 	for _, word := range []string{"can’t", "canʼt", "can‘t"} {
 		if entry, ok := idx.Lookup(word); !ok || entry.Word != "can't" {
@@ -179,7 +179,7 @@ favorite|noun:the one preferred
 organize|verb:to arrange into a structure
 recognize|verb:to identify from previous knowledge
 `
-	idx := NewIndex("", american, "")
+	idx := NewIndex("", american, "", "")
 
 	for typed, want := range map[string]string{
 		"colour":    "color",

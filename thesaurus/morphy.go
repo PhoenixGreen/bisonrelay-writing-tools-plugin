@@ -88,6 +88,40 @@ var irregularContractions = map[string]string{
 // unfindable, since the data is keyed with the plain form.
 func (idx *Index) candidates(word string) []string {
 	word = foldApostrophes(word)
+
+	// A phrase is reduced at its ends, because that is where English puts
+	// the inflection and which end depends on what the phrase is.
+	//
+	// A phrasal verb inflects its verb and leaves the particle alone: "took
+	// off" is "take off". A noun compound inflects its head noun, which is
+	// the last word: "wedding rings" is "wedding ring". Trying both covers
+	// the two shapes that actually occur, and costs a handful of candidates
+	// rather than the product of every word's forms -- which for three
+	// words would be dozens of mostly nonsense phrases to search for.
+	if strings.IndexByte(word, ' ') >= 0 {
+		out := []string{word}
+		seen := map[string]bool{word: true}
+		addPhrase := func(p string) {
+			if !seen[p] {
+				seen[p] = true
+				out = append(out, p)
+			}
+		}
+		if i := strings.IndexByte(word, ' '); i >= 0 {
+			head, rest := word[:i], word[i:]
+			for _, form := range idx.candidates(head) {
+				addPhrase(form + rest)
+			}
+		}
+		if i := strings.LastIndexByte(word, ' '); i >= 0 {
+			rest, tail := word[:i+1], word[i+1:]
+			for _, form := range idx.candidates(tail) {
+				addPhrase(rest + form)
+			}
+		}
+		return out
+	}
+
 	seen := map[string]bool{word: true}
 	out := []string{word}
 	add := func(w string) {
