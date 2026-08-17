@@ -38,7 +38,38 @@ const (
 		"\"Who's\" is short for \"who is\" or \"who has\"."
 	explainParticiple = "After \"have\", \"has\" or \"had\", a verb takes " +
 		"its past participle -- \"have gone\", not \"have went\"."
+	explainBrakeBreak = "A \"brake\" is the thing that stops a vehicle. A " +
+		"\"break\" is a pause, or what happens when something is damaged."
+	explainThereTheyre = "\"There\" is a place. \"Their\" shows possession. " +
+		"\"They're\" is short for \"they are\"."
 )
+
+// progressiveVerbs are the -ing forms used in this file's "possessive before a
+// verb" rules -- "your going", "their taking", "whose bringing".
+//
+// Curated by hand, and it has to be: WordNet gives almost every -ing form a
+// noun sense, so the part-of-speech test that decides advice/advise says
+// nothing at all here. The words left out are the ones that really are
+// possessed in ordinary writing -- your writing, your thinking, your reading
+// list, their training, whose cooking -- because for those the possessive is
+// correct and the rule would be arguing with the writer.
+const progressiveVerbs = `going|coming|getting|doing|making|taking|trying|` +
+	`saying|telling|asking|wearing|kidding|joking|missing|forgetting|` +
+	`sending|waiting|watching|leaving|staying|moving|driving|bringing|` +
+	`paying|joining|helping|calling|eating|drinking|sleeping|walking|` +
+	`sitting|starting|finishing|worrying|guessing|hoping|wondering`
+
+// gerundAsSubject is the reading every one of those rules must not touch: the
+// possessive really does own the -ing word, because the whole phrase is the
+// subject of the sentence.
+//
+// "Your talking is distracting", "their leaving was sudden", "your asking
+// helps nobody" are all correct English, and all of them are exactly the shape
+// the rules look for. What separates them is what comes next -- a verb the
+// -ing phrase is the subject of, rather than the object or adverbial that
+// follows a progressive.
+const gerundAsSubject = `(is|was|has|had|will|would|makes|made|helps|helped|` +
+	`means|meant|matters|mattered|surprised|annoys|annoyed|bothers|bothered)`
 
 // confusionRules are checks for the wrong word of a confusable pair, in
 // positions where the right one is not a matter of opinion.
@@ -437,6 +468,501 @@ var confusionRules = []GrammarRule{
 		Suggest:     "$1 led to",
 		Category:    "Grammar",
 		Explanation: explainParticiple,
+	},
+
+	// --- a possessive before a verb ---
+	//
+	// The commonest confusion of the lot and the one the earlier rules only
+	// half covered: they listed the words that may follow, and the list could
+	// never include the whole of English. These key on the *shape* instead --
+	// a possessive cannot own an action in progress -- which is one rule per
+	// pronoun rather than one per word.
+	{
+		Pattern:      `\b([yY])our\s+(` + progressiveVerbs + `)\b`,
+		Antipatterns: []string{`[yY]our\s+\w+ing\s+` + gerundAsSubject + `\b`},
+		Flags: []string{
+			"Your wearing you're new jacket",
+			"your going home already",
+			"I think your missing the point",
+		},
+		Leaves: []string{
+			"you're wearing your new jacket",
+			"your talking is distracting me",
+			"your asking helps nobody",
+		},
+		Message:     "Should be \"$1ou're $2\"",
+		Suggest:     "$1ou're $2",
+		Category:    "Confused words",
+		Explanation: explainYourYoure,
+	},
+	{
+		Pattern:      `\b([tT])heir\s+(` + progressiveVerbs + `)\b`,
+		Antipatterns: []string{`[tT]heir\s+\w+ing\s+(of\b|` + gerundAsSubject + `\b)`},
+		Flags: []string{
+			"Their taking they're children to school",
+			"their coming over later",
+		},
+		Leaves: []string{
+			"they're taking their children to school",
+			"their leaving was sudden",
+			"their taking of the city ended it",
+		},
+		Message:     "Should be \"$1hey're $2\"",
+		Suggest:     "$1hey're $2",
+		Category:    "Confused words",
+		Explanation: explainTheirTheyre,
+	},
+	{
+		// "There going to be late."
+		//
+		// The antipattern is the reading that makes this rule dangerous rather
+		// than merely wrong: "is there going to be a meeting?" is correct,
+		// extremely common, and the existential "there" is doing exactly what
+		// this pattern looks for.
+		Pattern: `\b([tT])here\s+(` + progressiveVerbs + `)\b`,
+		Antipatterns: []string{
+			`\b(is|Is|was|Was|will|Will|would|Would|isn't|wasn't)\s+there\s+\w+ing\b`,
+			`\b(out|over|down|up|back|in)\s+there\s+\w+ing\b`,
+		},
+		Flags: []string{
+			"There going to be late",
+			"there coming over later",
+		},
+		Leaves: []string{
+			"they're going to be late",
+			"is there going to be a meeting?",
+			"the path out there going north is closed",
+		},
+		Message:     "Should be \"$1hey're $2\"",
+		Suggest:     "$1hey're $2",
+		Category:    "Confused words",
+		Explanation: explainThereTheyre,
+	},
+	{
+		// The mirror of the existing whose/who's rule, which listed fourteen
+		// words. A gerund after "whose" is the same shape as the three above.
+		//
+		// The -ing words that are genuinely possessed are the trap here and a
+		// different set from the others: "whose cooking is this?" and "whose
+		// writing is on the box?" are correct, and both are excluded by the
+		// shared list rather than by an antipattern.
+		Pattern: `\b[wW]hose\s+(` + progressiveVerbs + `)\b`,
+		Flags: []string{
+			"whose bringing the cake",
+			"Whose taking the car tomorrow",
+		},
+		Leaves: []string{
+			"who's bringing the cake",
+			"whose cake is it",
+			"whose cooking is this",
+		},
+		Message:     "Should be \"who's $1\"",
+		Suggest:     "who's $1",
+		Category:    "Confused words",
+		Explanation: explainWhoseWhos,
+	},
+
+	// --- brake / break ---
+	//
+	// Both words are a noun and a verb, so the pair is not decidable by part
+	// of speech the way advice/advise is. What decides it is the company each
+	// keeps: the stopping device is named in a handful of fixed compounds and
+	// operated by a handful of fixed verbs, and the pause is taken rather than
+	// pressed.
+	//
+	// The trap throughout is "breaks" the ordinary verb. "The disc breaks",
+	// "the car breaks down" and "their breaks are too short" are all correct,
+	// which is why none of these rules matches a bare possessive before it --
+	// the vehicle has to be named, or the verb of pressing has to be there.
+	{
+		// Only the pause is taken, had or needed. "Press the brake" and "the
+		// brake failed" are the device and are left alone, which is why the
+		// verb is matched rather than the determiner.
+		Pattern: `\b([tT]ake|[tT]akes|[tT]aking|[tT]ook|[hH]ave|[hH]ad|[hH]aving|` +
+			`[nN]eed|[nN]eeds|[nN]eeded|[dD]eserve|[dD]eserves|[wW]ant|[wW]ants)\s+` +
+			`(a|an|the|another|my|your|his|her|our|their)\s+brake\b`,
+		Flags: []string{
+			"I'm going to take a brake",
+			"we need a brake after this",
+			"Take a brake",
+		},
+		Leaves: []string{
+			"I'm going to take a break",
+			"press the brake before the corner",
+			"the brake failed on the hill",
+		},
+		Message:     "Should be \"$1 $2 break\"",
+		Suggest:     "$1 $2 break",
+		Category:    "Confused words",
+		Explanation: explainBrakeBreak,
+	},
+	{
+		// Compounds that are only ever the pause. None of these is a part of
+		// a vehicle, so there is no reading where the device is meant.
+		Pattern: `\b([lL]unch|[cC]offee|[tT]ea|[sS]moke|[cC]igarette|[cC]ommercial|` +
+			`[sS]pring|[sS]ummer|[wW]inter|[EeAa]aster|[sS]tudy|[cC]areer|[sS]creen)\s+brakes?\b`,
+		Flags:       []string{"I had a lunch brake", "back after the coffee brake"},
+		Leaves:      []string{"I had a lunch break", "back after the coffee break"},
+		Message:     "Should be \"$1 break\"",
+		Suggest:     "$1 break",
+		Category:    "Confused words",
+		Explanation: explainBrakeBreak,
+	},
+	{
+		// Compounds that are only ever the device.
+		//
+		// Singular only, and deliberately. Every one of these words can be the
+		// subject of the verb "breaks" -- "the disc breaks under load", "the
+		// emergency breaks the routine" -- so matching the plural would flag
+		// correct writing to catch a mistake that is no commoner than it.
+		Pattern:     `\b([hH]and|[fF]oot|[dD]isc|[dD]isk|[eE]mergency|[pP]arking|[hH]andbrake)\s+break\b`,
+		Flags:       []string{"the hand break is on", "check the parking break"},
+		Leaves:      []string{"the hand brake is on", "the disc breaks under load"},
+		Message:     "Should be \"$1 brake\"",
+		Suggest:     "$1 brake",
+		Category:    "Confused words",
+		Explanation: explainBrakeBreak,
+	},
+	{
+		// The verbs of pressing. "Hit the breaks" is the commonest of these by
+		// a distance, and none of them has a reading where something is being
+		// shattered or paused.
+		Pattern: `\b([hH]it|[hH]its|[sS]lam|[sS]lams|[sS]lammed|[pP]ump|[pP]umped|` +
+			`[aA]pply|[aA]pplied|[pP]ress|[pP]ressed|[tT]ap|[tT]apped|[rR]elease|[rR]eleased)\s+` +
+			`(on\s+)?the\s+(break)(s?)\b`,
+		Flags: []string{
+			"I hit the breaks",
+			"she slammed on the breaks",
+			"Press the break before you turn",
+		},
+		Leaves:      []string{"I hit the brakes", "press the brake before you turn"},
+		Message:     "Should be \"$1 $2the brake$4\"",
+		Suggest:     "$1 $2the brake$4",
+		Category:    "Confused words",
+		Explanation: explainBrakeBreak,
+	},
+	{
+		// A named vehicle before it is what makes this safe. "My breaks are
+		// not working" is about a car; "their breaks are not working" may
+		// perfectly well be about a rota, so the possessive alone is not
+		// enough and the vehicle is matched instead.
+		//
+		// "Breaks down" is excluded by listing what may follow: a car that
+		// breaks down is correct writing and is exactly this shape.
+		Pattern: `\b([cC]ar|[cC]ar's|[bB]ike|[bB]ike's|[bB]icycle|[vV]an|[tT]ruck|[lL]orry|` +
+			`[mM]otorbike|[tT]railer|[wW]heel|[rR]ear|[fF]ront)\s+breaks\s+` +
+			`(are|were|aren't|weren't|failed|fail|need|needed|squeak|squeal|feel|felt|` +
+			`work|worked|don't|didn't|stopped\s+working)\b`,
+		Flags: []string{
+			"My car breaks are not working",
+			"the bike breaks failed on the hill",
+		},
+		Leaves: []string{
+			"My car brakes are not working",
+			"my car breaks down every winter",
+			"the front breaks off in transit",
+		},
+		Message:     "Should be \"$1 brakes $2\"",
+		Suggest:     "$1 brakes $2",
+		Category:    "Confused words",
+		Explanation: explainBrakeBreak,
+	},
+	{
+		// Stopping at a place you stop at. "Break for lunch" is correct and is
+		// this shape, so the thing stopped at has to be named and every one
+		// of these is a road feature.
+		Pattern: `\b[bB]reak\s+(at|before|for)\s+((?:a|an|the)\s+)?` +
+			`(stop\s+sign|red\s+light|traffic\s+light|traffic\s+lights|junction|` +
+			`roundabout|crossing|zebra\s+crossing|corner|bend)\b`,
+		Flags: []string{
+			"You need to break at a stop sign",
+			"break before the junction",
+		},
+		Leaves: []string{
+			"You need to brake at a stop sign",
+			"let's break for lunch",
+			"we break for coffee at eleven",
+		},
+		Message:     "Should be \"brake $1 $2$3\"",
+		Suggest:     "brake $1 $2$3",
+		Category:    "Confused words",
+		Explanation: explainBrakeBreak,
+	},
+	{
+		// The mirror, and the easier direction: none of these is a thing that
+		// can be slowed down. You break a law, a record or a promise, and
+		// there is no reading where a vehicle's brake is involved.
+		Pattern: `\b[bB]rake\s+(the\s+|a\s+|my\s+|your\s+|his\s+|her\s+|their\s+)?` +
+			`(law|laws|rules?|record|records|news|ice|silence|deadlock|habit|` +
+			`promise|promises|speed\s+limit|cycle|curse|tie|even|ranks|mould|mold)\b`,
+		Flags: []string{
+			"you brake the speed limit",
+			"don't brake the law",
+			"that will brake a promise",
+		},
+		Leaves: []string{
+			"you break the speed limit",
+			"press the brake at the corner",
+		},
+		Message:     "Should be \"break $1$2\"",
+		Suggest:     "break $1$2",
+		Category:    "Confused words",
+		Explanation: explainBrakeBreak,
+	},
+
+	// --- weather / whether ---
+	{
+		// "Weather or not" is never the sky.
+		Pattern:  `\b[wW]eather\s+or\s+not\b`,
+		Flags:    []string{"We will go outside weather or not it rains"},
+		Leaves:   []string{"we will go outside whether or not it rains"},
+		Message:  "Should be \"whether or not\"",
+		Suggest:  "whether or not",
+		Category: "Confused words",
+		Explanation: "\"Whether\" introduces a choice between possibilities. " +
+			"\"Weather\" is rain and sunshine.",
+	},
+
+	// --- peace / piece ---
+	{
+		// "A peace of cake." The antipattern is the one phrase where "peace"
+		// really does follow a determiner and precede "of", and it is a common
+		// one.
+		Pattern: `\b([aA]|[tT]he|[oO]ne|[aA]nother|[eE]very)\s+peace\s+of\b`,
+		// The antipattern repeats the determiner because suppression requires
+		// the exception to *contain* the match, and the match starts at the
+		// determiner rather than at "peace".
+		Antipatterns: []string{`\b([aA]|[tT]he|[oO]ne|[aA]nother|[eE]very)\s+peace\s+of\s+mind\b`},
+		Flags:        []string{"I want a peace of cake"},
+		Leaves: []string{
+			"I want a piece of cake",
+			"it gave me a peace of mind I had not had for weeks",
+		},
+		Message:  "Should be \"$1 piece of\"",
+		Suggest:  "$1 piece of",
+		Category: "Confused words",
+		Explanation: "A \"piece\" is a portion of something. \"Peace\" is " +
+			"calm, or the absence of war.",
+	},
+
+	// --- whole / hole ---
+	{
+		// "A whole in the wall." "Whole" is an adjective and cannot be what is
+		// in something.
+		Pattern:  `\b([aA]|[tT]he|[oO]ne|[aA]nother)\s+whole\s+in\s+(the|a|an|my|your|his|her|its|our|their)\b`,
+		Flags:    []string{"There is a whole in the wall"},
+		Leaves:   []string{"there is a hole in the wall", "the whole wall came down"},
+		Message:  "Should be \"$1 hole in $2\"",
+		Suggest:  "$1 hole in $2",
+		Category: "Confused words",
+		Explanation: "A \"hole\" is an opening. \"Whole\" means complete, and " +
+			"describes a thing rather than being one.",
+	},
+
+	// --- scene / seen ---
+	{
+		// An auxiliary forces the participle, and "scene" has no verb reading
+		// at all.
+		Pattern: `\b([iI]'ve|[yY]ou've|[wW]e've|[tT]hey've|[hH]e's|[sS]he's|` +
+			`[hH]ave|[hH]as|[hH]ad|[nN]ever|[eE]ver|[bB]een)\s+scene\b`,
+		Flags:    []string{"I've scene that movie", "have you ever scene it"},
+		Leaves:   []string{"I've seen that movie", "the final scene was excellent"},
+		Message:  "Should be \"$1 seen\"",
+		Suggest:  "$1 seen",
+		Category: "Confused words",
+		Explanation: "\"Seen\" is the past participle of \"see\". A \"scene\" " +
+			"is a part of a film or an event.",
+	},
+
+	// --- allowed / aloud ---
+	{
+		// "We were aloud to read it." An adverb cannot follow a form of "be"
+		// as the thing being permitted. Reading aloud is left alone because
+		// nothing here matches it: "read it aloud" has no "be" in front.
+		Pattern:  `\b([iI]s|[aA]re|[wW]as|[wW]ere|[aA]m|[bB]e|[bB]een|[nN]ot)\s+aloud\s+to\b`,
+		Flags:    []string{"We were aloud to read the story"},
+		Leaves:   []string{"we were allowed to read the story", "she read the story aloud to the class"},
+		Message:  "Should be \"$1 allowed to\"",
+		Suggest:  "$1 allowed to",
+		Category: "Confused words",
+		Explanation: "\"Allowed\" means permitted. \"Aloud\" means out loud, " +
+			"where everyone can hear.",
+	},
+
+	// --- breath / breathe ---
+	{
+		// A determiner or an adjective forces the noun.
+		Pattern: `\b([aA]|[tT]he|[mM]y|[yY]our|[hH]is|[hH]er|[oO]ur|[tT]heir|` +
+			`[oO]ne|[eE]very|[dD]eep|[lL]ast|[fF]irst|[sS]hort)\s+breathe\b`,
+		Flags:    []string{"Take a deep breathe"},
+		Leaves:   []string{"take a deep breath", "just breathe slowly"},
+		Message:  "Should be \"$1 breath\"",
+		Suggest:  "$1 breath",
+		Category: "Confused words",
+		Explanation: "\"Breath\" is the noun -- the air itself. \"Breathe\" " +
+			"is the verb -- what you do with it.",
+	},
+	{
+		// "To" or a modal forces the verb.
+		Pattern:     `\b([tT]o|[cC]an|[cC]an't|[cC]ould|[wW]ill|[wW]ould|[mM]ust|[sS]hould|[cC]annot)\s+breath\b`,
+		Flags:       []string{"I can't breath in here", "just try to breath slowly"},
+		Leaves:      []string{"I can't breathe in here", "take a deep breath"},
+		Message:     "Should be \"$1 breathe\"",
+		Suggest:     "$1 breathe",
+		Category:    "Confused words",
+		Explanation: "\"Breathe\" is the verb. \"Breath\" is the noun.",
+	},
+
+	// --- faze / phase ---
+	{
+		// A phase is a stage and cannot be done to a person.
+		Pattern:  `\b([dD]idn't|[dD]oesn't|[dD]on't|[wW]on't|[wW]ouldn't|[nN]ever|[dD]id|[dD]oes)\s+phase\s+(me|him|her|us|them|you|anyone|anybody)\b`,
+		Flags:    []string{"The criticism didn't phase her"},
+		Leaves:   []string{"the criticism didn't faze her", "the next phase of the project"},
+		Message:  "Should be \"$1 faze $2\"",
+		Suggest:  "$1 faze $2",
+		Category: "Confused words",
+		Explanation: "\"Faze\" means to disturb or unsettle someone. A " +
+			"\"phase\" is a stage in a process.",
+	},
+
+	// --- quiet / quite ---
+	{
+		// An intensifier forces the adjective: nothing is "very quite".
+		Pattern:  `\b([vV]ery|[sS]o|[rR]eally|[tT]oo|[pP]retty|[bB]e|[kK]ept|[sS]tayed)\s+quite\b`,
+		Flags:    []string{"the room was very quite"},
+		Leaves:   []string{"the room was very quiet", "it is quite large"},
+		Message:  "Should be \"$1 quiet\"",
+		Suggest:  "$1 quiet",
+		Category: "Confused words",
+		Explanation: "\"Quiet\" means without noise. \"Quite\" means fairly " +
+			"or completely, and modifies another word.",
+	},
+	{
+		// The mirror: "quiet" before a determiner or an adjective is the
+		// degree word, which is spelled the other way.
+		Pattern:  `\b[qQ]uiet\s+(a|an|the|good|bad|big|large|small|nice|often|well|right|sure|different|similar|possible|likely|clear|common|rare|hard|easy|expensive|cheap|late|early|long|short|new|old|a\s+lot)\b`,
+		Flags:    []string{"The room is quiet large"},
+		Leaves:   []string{"the room is quite large", "be quiet and listen"},
+		Message:  "Should be \"quite $1\"",
+		Suggest:  "quite $1",
+		Category: "Confused words",
+		Explanation: "\"Quite\" means fairly or completely. \"Quiet\" means " +
+			"without noise.",
+	},
+
+	// --- passed / past ---
+	{
+		// A verb of motion before it makes "past" the preposition, not a verb
+		// in its own right -- two verbs cannot sit side by side like this.
+		Pattern: `\b([wW]alk|[wW]alked|[wW]alking|[dD]rive|[dD]rove|[dD]riving|` +
+			`[rR]an|[rR]unning|[wW]ent|[gG]oing|[cC]ame|[cC]oming|[rR]ode|` +
+			`[rR]iding|[fF]lew|[fF]lying|[mM]oved|[mM]oving)\s+passed\b`,
+		Flags:    []string{"we walked passed the station"},
+		Leaves:   []string{"we walked past the station", "we passed the station"},
+		Message:  "Should be \"$1 past\"",
+		Suggest:  "$1 past",
+		Category: "Confused words",
+		Explanation: "\"Past\" is the preposition -- going by something. " +
+			"\"Passed\" is the past tense of the verb \"to pass\".",
+	},
+	{
+		// The mirror: a subject pronoun needs a verb, and "past" is not one.
+		Pattern:  `\b([iI]|[wW]e|[yY]ou|[tT]hey|[hH]e|[sS]he|[iI]t)\s+past\s+(the|a|an|my|your|his|her|our|their|it|him|them|us|me)\b`,
+		Flags:    []string{"We past the shop on the way"},
+		Leaves:   []string{"we passed the shop on the way", "in the past we did"},
+		Message:  "Should be \"$1 passed $2\"",
+		Suggest:  "$1 passed $2",
+		Category: "Confused words",
+		Explanation: "\"Passed\" is the verb. \"Past\" is a time gone by, or " +
+			"the preposition meaning beyond.",
+	},
+
+	// --- accept / except ---
+	{
+		Pattern:  `\b([eE]veryone|[eE]verybody|[aA]nyone|[aA]nybody|[eE]verything|[aA]nything|[aA]ll|[nN]obody|[nN]othing)\s+accept\b`,
+		Flags:    []string{"I will invite everyone accept Tom"},
+		Leaves:   []string{"I will invite everyone except Tom"},
+		Message:  "Should be \"$1 except\"",
+		Suggest:  "$1 except",
+		Category: "Confused words",
+		Explanation: "\"Except\" means excluding. \"Accept\" means to receive " +
+			"or agree to something.",
+	},
+	{
+		Pattern:  `\b([wW]ill|[cC]an|[cC]ould|[wW]ould|[mM]ust|[sS]hould|[pP]lease|[dD]idn't|[dD]on't|[dD]oesn't|[wW]on't)\s+except\b`,
+		Flags:    []string{"I will except your offer"},
+		Leaves:   []string{"I will accept your offer", "everyone except Tom"},
+		Message:  "Should be \"$1 accept\"",
+		Suggest:  "$1 accept",
+		Category: "Confused words",
+		Explanation: "\"Accept\" means to receive or agree to. \"Except\" " +
+			"means excluding.",
+	},
+
+	// --- lead / led ---
+	{
+		// Third person singular only, and that is the whole rule. "I lead the
+		// team" and "we lead the market" are correct present tense; "he lead"
+		// is not a tense English has, so it can only be the past.
+		Pattern:  `\b([hH]e|[sS]he|[wW]ho|[iI]t)\s+lead\s+(the|a|an|us|them|him|her|me|it|to|us\s+to)\b`,
+		Flags:    []string{"She lead the group"},
+		Leaves:   []string{"she led the group", "I lead the team every Tuesday", "we lead the market"},
+		Message:  "Should be \"$1 led $2\"",
+		Suggest:  "$1 led $2",
+		Category: "Confused words",
+		Explanation: "\"Led\" is the past tense of \"lead\". The spelling " +
+			"\"lead\" is either the present tense or the metal.",
+	},
+
+	// --- stationary / stationery ---
+	{
+		Pattern:  `\b([bB]uy|[bB]ought|[oO]rder|[oO]rdered|[sS]ome|[tT]he|[oO]ffice|[sS]chool)\s+stationary\b`,
+		Flags:    []string{"I bought some stationary"},
+		Leaves:   []string{"I bought some stationery", "the car was stationary"},
+		Message:  "Should be \"$1 stationery\"",
+		Suggest:  "$1 stationery",
+		Category: "Confused words",
+		Explanation: "\"Stationery\" is paper and pens. \"Stationary\" means " +
+			"not moving.",
+	},
+	{
+		Pattern:  `\b([wW]as|[wW]ere|[iI]s|[aA]re|[rR]emained|[sS]tayed|[sS]tood|[kK]ept|[hH]eld)\s+stationery\b`,
+		Flags:    []string{"The car was stationery"},
+		Leaves:   []string{"the car was stationary", "I bought some stationery"},
+		Message:  "Should be \"$1 stationary\"",
+		Suggest:  "$1 stationary",
+		Category: "Confused words",
+		Explanation: "\"Stationary\" means not moving. \"Stationery\" is " +
+			"writing materials.",
+	},
+
+	// --- know / no ---
+	{
+		// A subject pronoun needs a verb, and "no" is not one.
+		Pattern:  `\b([iI]|[wW]e|[yY]ou|[tT]hey)\s+no\s+(the|that|what|how|why|where|who|when|it|this|nothing|him|her|them|about)\b`,
+		Flags:    []string{"I no the answer"},
+		Leaves:   []string{"I know the answer", "the answer is no"},
+		Message:  "Should be \"$1 know $2\"",
+		Suggest:  "$1 know $2",
+		Category: "Confused words",
+		Explanation: "\"Know\" is the verb -- to be aware of something. " +
+			"\"No\" is the negative.",
+	},
+
+	// --- to / too, the other direction ---
+	{
+		// "I need too go." "Too" is an adverb of degree and cannot introduce a
+		// verb; only the infinitive "to" can.
+		Pattern: `\b[tT]oo\s+(go|be|get|do|make|see|say|have|take|find|know|` +
+			`come|give|work|start|stop|help|use|try|put|keep|leave|call|send|` +
+			`check|ask|talk|think|buy|pay|read|write|play|watch|meet)\b`,
+		Flags:       []string{"so I need too go early"},
+		Leaves:      []string{"so I need to go early", "that is too much"},
+		Message:     "Should be \"to $1\"",
+		Suggest:     "to $1",
+		Category:    "Confused words",
+		Explanation: explainToToo,
 	},
 
 	// --- phrases that are simply not the phrase ---

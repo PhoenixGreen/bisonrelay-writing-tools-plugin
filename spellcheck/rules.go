@@ -20,6 +20,8 @@ var Rules = concat(
 	errorRules,
 	contractionRules,
 	confusionRules,
+	homophoneRules,
+	homophonePairRules,
 	compoundRules,
 	articleRules,
 	pluralArticleRules,

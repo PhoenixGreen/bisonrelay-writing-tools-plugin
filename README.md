@@ -154,18 +154,38 @@ X-ray).
 The trap in the first list is that "uni" is not the test. "Unimportant" and "uninteresting"
 open the same way on paper and take "an", so the stems are spelled out rather than shortened.
 
-**Confusable pairs.** 33 rules covering then/than, lose/loose, affect/effect, your/you're,
-to/too, whose/who's, their/they're and the past participles after have/has/had. LanguageTool
-decides the general case with ngram frequency data -- given "more money then you", it knows
-"money than you" is the commoner trigram -- which is gigabytes and out of the question here.
-What is possible without any of it is the decidable slice: positions where only one of the
-pair can be right whatever the sentence is about. "Than" cannot follow "and"; a possessive
-cannot precede a verb; "apart of" is never a phrase.
+**Confusable pairs.** 290 rules covering then/than, lose/loose, affect/effect, your/you're,
+to/too, whose/who's, their/they're, brake/break, passed/past, quiet/quite, accept/except,
+breath/breathe and the past participles after have/has/had. LanguageTool decides the general
+case with ngram frequency data -- given "more money then you", it knows "money than you" is
+the commoner trigram -- which is gigabytes and out of the question here. What is possible
+without any of it is the decidable slice: positions where only one of the pair can be right
+whatever the sentence is about. "Than" cannot follow "and"; a possessive cannot precede a
+verb; "apart of" is never a phrase.
 
 The your/you're rule is the shape of the work. It began with sixteen words and finished with
 four, because almost everything that reads as an adjective after "you're" also reads as
 something ownable after "your": your right (to refuse), your correct address, your late
 payment, your invited guests, your amazing work. Each of those is now a line in the corpus.
+
+Its companion covers the position that list never could: `your` before an `-ing` word, and
+the same rule for `their`, `there` and `whose`. A possessive cannot own an action in
+progress, so the rule keys on the shape rather than on which word follows. Two readings keep
+it honest. The fused participle is correct English and is exactly this shape -- "your talking
+is distracting me", "their leaving was sudden" -- and is excluded by what comes *after* the
+`-ing` word, since a phrase acting as a subject is followed by the verb it is the subject of.
+And the `-ing` words that are ordinary possessed nouns -- your writing, your reading list,
+their training, whose cooking -- are left out of the shared list entirely. WordNet is no help
+here, unusually: it gives almost every `-ing` form a noun sense, so the part-of-speech test
+that settles advice/advise says nothing at all about this one.
+
+brake/break is the other shape. Both words are a noun and a verb, so part of speech cannot
+separate them either; what decides it is the company each keeps. The device is named in fixed
+compounds (hand brake, disc brake) and operated by fixed verbs (hit, press, slam on); the
+pause is taken rather than pressed. The trap is "breaks" the ordinary verb -- "the disc
+breaks under load", "the car breaks down", "their breaks are too short" are all correct and
+all sit in the shape the rules look for, which is why none of them matches a bare possessive
+and the compound rules are singular only.
 
 **Wordiness and cliches.** 106 suggestions, from a table of phrase pairs -- "in the event
 that" to "if", "each and every" to "each" -- plus 25 phrases worn smooth by overuse, flagged
