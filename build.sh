@@ -18,3 +18,26 @@ done
 GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o plugin.wasm .
 
 echo "Built plugin.wasm ($(du -h plugin.wasm | cut -f1))"
+
+# Bison Relay ships this plugin inside the client rather than importing it, as
+# client/pluginmgr/builtin/writingtools.wasm.gz -- so a build that stops here
+# reaches nothing. The app unpacks that gz into its data directory on first
+# run and re-checks it by size, and the copy in this repository is not
+# consulted by anything at all.
+#
+# This is worth automating because the failure is silent in the worst way: the
+# build succeeds, the tests pass, and the running app quietly goes on using
+# whatever rules were embedded the last time somebody remembered. A rule that
+# does not fire looks exactly like a rule that was never written.
+#
+# Only when the checkout is where it is expected, and only the bytes -- the
+# client is Go, so the app still has to be rebuilt (bruig/build_desktop.sh)
+# before a new rule reaches a running copy.
+bruig_builtin="../bisonrelay/client/pluginmgr/builtin"
+if [ -d "$bruig_builtin" ]; then
+  gzip -9 -c plugin.wasm > "$bruig_builtin/writingtools.wasm.gz"
+  cp manifest.json "$bruig_builtin/writingtools.manifest.json"
+  echo "Synced into $bruig_builtin -- rebuild bruig for it to take effect"
+else
+  echo "No bruig checkout at $bruig_builtin; built-in copy NOT updated"
+fi
