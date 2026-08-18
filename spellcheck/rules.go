@@ -15,7 +15,9 @@ package spellcheck
 //
 // Only the groups above styleRules fire on text that is wrong whatever the
 // writer meant. styleRules is marked SeveritySuggestion throughout and holds
-// to a different standard -- see the note at the top of rules_style.go.
+// to a different standard -- see the note at the top of rules_style.go --
+// and checkRules is marked SeverityCheck and holds to a third, which is that
+// it may be wrong as long as it asks rather than asserts.
 var Rules = concat(
 	errorRules,
 	contractionRules,
@@ -32,4 +34,5 @@ var Rules = concat(
 	properNounRules,
 	punctuationRules,
 	styleRules,
+	checkRules,
 )

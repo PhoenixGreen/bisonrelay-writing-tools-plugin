@@ -456,6 +456,16 @@ func TestRulesDoNotFireOnCorrectText(t *testing.T) {
 		if r.Severity == SeveritySuggestion {
 			continue
 		}
+		// Checks likewise, and for a sharper reason: a check exists to fire
+		// on writing that is probably correct. "He had to brake" is in this
+		// corpus and a brake/break check that could be held to this standard
+		// would be a rule the error tier could have carried already. What
+		// keeps them honest instead is TestCheckRulesAskAQuestion, which
+		// insists they ask rather than assert, and the antipatterns each one
+		// carries for the readings that are settled.
+		if r.Severity == SeverityCheck {
+			continue
+		}
 		re, err := regexp.Compile(r.Pattern)
 		if err != nil {
 			// RE2 rejects it. That is expected for the constructs Dart has
@@ -547,6 +557,10 @@ var categories = map[string]bool{
 	"Repetition":     true,
 	"Readability":    true,
 	"Consistency":    true,
+	// The checks -- see rules_checks.go. A heading of its own rather than
+	// "Confused words", which the error rules use: those two rows say
+	// different things and the row is where the reader learns which.
+	"Possible confusion": true,
 }
 
 // TestRulesAreExplained guards the thing a new rule is likeliest to be
@@ -631,6 +645,106 @@ func TestAntipatternsAreReachable(t *testing.T) {
 				t.Errorf("Rules[%d] (%q): antipattern %q matches none of the "+
 					"rule's own Leaves examples -- add the reading it is for, "+
 					"or the exception is dead", i, r.Message, source)
+			}
+		}
+	}
+}
+
+// TestCheckRulesAskAQuestion holds the check tier to the terms it was allowed
+// in on.
+//
+// A check is permitted to be wrong about the writing, which is a licence no
+// other rule in this package has. What it is not permitted to do is spend
+// that licence as though it were an error: a rule that fires on correct text
+// and says "Should be \"break\"" is worse than the silence it replaced,
+// because the reader who had it right is now being corrected by a rule that
+// does not know. The question mark is the whole bargain, so it is checked
+// rather than trusted to review.
+func TestCheckRulesAskAQuestion(t *testing.T) {
+	for i, r := range Rules {
+		if r.Severity != SeverityCheck {
+			// The converse: nothing outside the tier may borrow its
+			// category, or the amber rows and the red ones would be
+			// indistinguishable in the one place they are read together.
+			if r.Category == "Possible confusion" {
+				t.Errorf("Rules[%d] (%q) is in \"Possible confusion\" but is "+
+					"not a check", i, r.Message)
+			}
+			continue
+		}
+		if !strings.HasSuffix(r.Message, "?") {
+			t.Errorf("Rules[%d]: a check must ask, not assert: %q", i, r.Message)
+		}
+		if r.Suggest == "" {
+			t.Errorf("Rules[%d] (%q): a check must offer the other reading",
+				i, r.Message)
+		}
+		if r.Category != "Possible confusion" {
+			t.Errorf("Rules[%d] (%q): a check belongs in \"Possible "+
+				"confusion\", not %q", i, r.Message, r.Category)
+		}
+		// A rule matching one bare word fires on every use of it, and the
+		// tier is only tolerable while it fires on positions.
+		if len(r.Antipatterns) == 0 {
+			t.Errorf("Rules[%d] (%q): a check carries the readings it must "+
+				"not fire on, and this one has none", i, r.Message)
+		}
+	}
+}
+
+// TestChecksDoNotRepeatTheErrorRules: no check may fire on text an error rule
+// already catches.
+//
+// The two tiers are painted in different colours and listed on different
+// pages, so a pair covered by both is reported twice, in two places, saying
+// the same thing -- once as a correction and once as a question about the
+// correction. Worse, it is the error rules that would look unreliable: a
+// reader shown "Should be \"break\"" and "Did you mean \"break\"?" about the
+// same three words learns that the tools are arguing with themselves.
+//
+// This is the boundary that will actually erode. The checks are being written
+// pair by pair over ground the error rules already partly cover, and the
+// natural mistake is to write a check for a position that was decidable all
+// along.
+func TestChecksDoNotRepeatTheErrorRules(t *testing.T) {
+	type compiled struct {
+		rule       GrammarRule
+		re         *regexp.Regexp
+		exceptions []*regexp.Regexp
+	}
+	var errors []compiled
+	for _, r := range Rules {
+		if r.Severity != "" {
+			continue
+		}
+		re, err := regexp.Compile(r.Pattern)
+		if err != nil {
+			continue // Dart-only syntax; covered app-side.
+		}
+		c := compiled{rule: r, re: re}
+		for _, source := range r.Antipatterns {
+			if anti, err := regexp.Compile(source); err == nil {
+				c.exceptions = append(c.exceptions, anti)
+			}
+		}
+		errors = append(errors, c)
+	}
+
+	for i, r := range Rules {
+		if r.Severity != SeverityCheck {
+			continue
+		}
+		for _, text := range r.Flags {
+			for _, e := range errors {
+				for _, at := range e.re.FindAllStringIndex(text, -1) {
+					if suppressed(e.exceptions, text, at) {
+						continue
+					}
+					t.Errorf("Rules[%d] (%q) asks about %q, which the error "+
+						"rule %q already corrects -- the position was "+
+						"decidable, so fix the check or drop it",
+						i, r.Message, text, e.rule.Message)
+				}
 			}
 		}
 	}

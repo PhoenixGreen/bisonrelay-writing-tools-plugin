@@ -14,6 +14,25 @@ package spellcheck
 // happen.
 const SeveritySuggestion = "suggestion"
 
+// SeverityCheck marks a rule as a question rather than a finding: the text is
+// spelled correctly and reads correctly, and the rule's claim is only that
+// this is one of the pairs people confuse and the sentence does not settle
+// which was meant.
+//
+// The third severity exists because the other two could not carry these. An
+// error must never fire on correct writing, which is why "It would brake the
+// system" goes unflagged today -- no rule can catch it without also catching
+// "he had to brake". A suggestion says the writing could be better, which is
+// not the claim either: nothing about the phrasing is at fault if "brake" was
+// the word meant.
+//
+// What the app does with it: lists the issue on the Suggestions and Checks
+// page beside the style rules, underlines it in amber rather than red or
+// blue, and offers "Correct Usage" -- the answer that only makes sense for a
+// question, and the one that makes a check tolerable to a writer who had it
+// right. See rules_checks.go for what a rule in this tier owes its reader.
+const SeverityCheck = "check"
+
 // GrammarRule is one regex-based writing check. It mirrors the
 // spellcheck-data capability's JSON schema exactly; this plugin is a
 // separate Go module and deliberately takes no dependency on Bison Relay to
