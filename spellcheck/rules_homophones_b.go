@@ -24,8 +24,10 @@ package spellcheck
 // and is ordinary, the pair is simply absent.
 
 const (
-	explainSeeSea          = "\"See\" is what your eyes do. The \"sea\" is the ocean."
-	explainWhereWear       = "\"Where\" asks about a place. \"Wear\" is what you do with clothes."
+	explainSeeSea    = "\"See\" is what your eyes do. The \"sea\" is the ocean."
+	explainWhereWear = "\"Where\" asks about a place. \"Wear\" is what you do with clothes."
+	explainWhereWere = "\"Where\" asks about a place. \"Were\" is the " +
+		"past tense of \"are\"."
 	explainWeatherWhether  = "\"Whether\" introduces a choice. \"Weather\" is rain and sunshine."
 	explainRightWrite      = "\"Write\" is what you do with a pen. \"Right\" means correct, or the opposite of left."
 	explainBuyBy           = "\"Buy\" means to purchase. \"By\" is the preposition."
@@ -116,6 +118,67 @@ var homophonePairRules = []GrammarRule{
 		Suggest:     "where $1",
 		Category:    "Confused words",
 		Explanation: explainWhereWear,
+	},
+	// --- where / were ---
+	//
+	// The pair next door, and it was missing entirely: "Were am I going" went
+	// unflagged while the identical "Wear did you put it" was caught, because
+	// the wear/where rules were written as a pair and nobody wrote the third.
+	// Both directions are settled by grammar rather than by meaning, which is
+	// why these are errors and not checks -- there is no reading of "were am"
+	// that anybody meant.
+	{
+		// Same shape as the wear rule above: a question word takes an
+		// auxiliary, and "were" is one itself, so it cannot precede another.
+		// The subject after the auxiliary is matched too, because "were do"
+		// and "were can" each turn up inside a hyphenated compound -- "those
+		// were do-or-die moments", "the tins were can-shaped" -- where the
+		// second word is not an auxiliary at all.
+		Pattern: `\b[wW]ere\s+(am|is|was|did|do|does|has|have|can|could|will|` +
+			`would|should|must)\s+(I|you|we|they|he|she|it|the|a|an|this|that|` +
+			`my|your|his|her|our|their)\b`,
+		Flags: []string{
+			"Were am I going",
+			"were do you live",
+			"were can I find the form",
+		},
+		Leaves: []string{
+			"where am I going",
+			"they were doing their best",
+			"there were the usual complaints",
+		},
+		Message:     "Should be \"where $1 $2\"",
+		Suggest:     "where $1 $2",
+		Category:    "Confused words",
+		Explanation: explainWhereWere,
+	},
+	{
+		// The other direction. Only the three pronouns that cannot take a
+		// relative "where" after them: "there where the road bends" is
+		// awkward but correct, and "the place where" is the ordinary use.
+		Pattern: `\b([wW]e|[tT]hey|[yY]ou)\s+where\b`,
+		Antipatterns: []string{
+			// The elliptical "where possible", which introduces a clause
+			// rather than standing in for a verb.
+			`\b([wW]e|[tT]hey|[yY]ou)\s+where\s+(possible|necessary|appropriate|applicable|available|needed|required)\b`,
+		},
+		Flags: []string{
+			"we where going to leave",
+			"they where happy with it",
+		},
+		Leaves: []string{
+			"we were going to leave",
+			"we where possible avoid the queue",
+			"the place where they met",
+		},
+		// Names the pair rather than just the fix, because an agreement rule
+		// in rules_agreement.go corrects "we was" with the same words -- and
+		// a reader told "Should be \"we were\"" about "we where" would be
+		// looking for a verb they got wrong rather than a word they confused.
+		Message:     "Should be \"$1 were\", not \"where\"",
+		Suggest:     "$1 were",
+		Category:    "Confused words",
+		Explanation: explainWhereWere,
 	},
 	{
 		// "Go to where the road ends" is correct, so an object has to follow.
