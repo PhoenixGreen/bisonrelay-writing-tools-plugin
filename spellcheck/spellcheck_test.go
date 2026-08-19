@@ -561,6 +561,9 @@ var categories = map[string]bool{
 	// "Confused words", which the error rules use: those two rows say
 	// different things and the row is where the reader learns which.
 	"Possible confusion": true,
+	"Redundancy":         true,
+	"Inclusive language": true,
+	"Typography":         true,
 }
 
 // TestRulesAreExplained guards the thing a new rule is likeliest to be
@@ -747,6 +750,43 @@ func TestChecksDoNotRepeatTheErrorRules(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// TestPhraseTablesAreDisjoint: no phrase may appear in two of the tables the
+// suggestion rules are generated from.
+//
+// Four tables now produce a rule per row -- wordiness, redundancy, clichés and
+// the inclusive terms -- and they are edited separately, by whoever is adding
+// to the one in front of them. A phrase in two of them is reported twice with
+// two different headings and two different fixes, and the reader has no way to
+// tell which of the two the tools actually believe.
+//
+// This is the check that would have caught the split itself going wrong: the
+// redundancy rows were moved out of the wordiness table, and a copy left
+// behind would have looked exactly like a normal day's work.
+func TestPhraseTablesAreDisjoint(t *testing.T) {
+	tables := map[string][][2]string{
+		"wordy":     wordy,
+		"redundant": redundant,
+		"gendered":  gendered,
+	}
+	seen := map[string]string{}
+	for name, table := range tables {
+		for _, pair := range table {
+			phrase := strings.ToLower(pair[0])
+			if was, ok := seen[phrase]; ok {
+				t.Errorf("%q is in both %s and %s", pair[0], was, name)
+			}
+			seen[phrase] = name
+		}
+	}
+	for _, pair := range cliches {
+		phrase := strings.ToLower(pair[0])
+		if was, ok := seen[phrase]; ok {
+			t.Errorf("%q is in both %s and cliches", pair[0], was)
+		}
+		seen[phrase] = "cliches"
 	}
 }
 

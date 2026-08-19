@@ -19,9 +19,16 @@ import "strings"
 // rules would not be acceptable under the other one.
 
 // wordy pairs a phrase with what it usually shortens to. Held as data rather
-// than as rule literals because there are ninety of them and they differ in
+// than as rule literals because there are dozens of them and they differ in
 // nothing but the two strings; written out longhand, the shape of each rule
 // would bury the list itself.
+//
+// Long-windedness only. The phrases where one half repeats the other used to
+// live at the bottom of this table under a comment, and they are a different
+// observation about the writing -- "free gift" is not a long way of saying
+// "gift", it is "gift" with a word in front of it that adds nothing. They now
+// have their own table, their own wording and their own heading in the panel:
+// see rules_redundancy.go.
 //
 // A pair belongs here only if the replacement is a fair paraphrase in most
 // contexts. "Protest against" was tried and dropped: it is standard British
@@ -68,49 +75,6 @@ var wordy = [][2]string{
 	{"until such time as", "until"},
 	{"with regard to", "about"},
 	{"with the exception of", "except"},
-
-	// Phrases where one half repeats the other.
-	{"absolutely essential", "essential"},
-	{"actual fact", "fact"},
-	{"added bonus", "bonus"},
-	{"advance planning", "planning"},
-	{"basic fundamentals", "fundamentals"},
-	{"brief summary", "summary"},
-	{"close proximity", "proximity"},
-	{"collaborate together", "collaborate"},
-	{"completely eliminate", "eliminate"},
-	{"connect together", "connect"},
-	{"each and every", "each"},
-	{"end result", "result"},
-	{"exact same", "same"},
-	{"few in number", "few"},
-	{"first and foremost", "first"},
-	{"free gift", "gift"},
-	{"future plans", "plans"},
-	{"general consensus", "consensus"},
-	{"join together", "join"},
-	{"may possibly", "may"},
-	{"merge together", "merge"},
-	{"mutual cooperation", "cooperation"},
-	{"new innovation", "innovation"},
-	{"past experience", "experience"},
-	{"past history", "history"},
-	{"personal opinion", "opinion"},
-	{"plan ahead", "plan"},
-	{"postpone until later", "postpone"},
-	{"repeat again", "repeat"},
-	{"return back", "return"},
-	{"revert back", "revert"},
-	{"rise up", "rise"},
-	{"still remains", "remains"},
-	{"sum total", "total"},
-	{"unexpected surprise", "surprise"},
-	{"usual custom", "custom"},
-	{"12 midnight", "midnight"},
-	{"12 noon", "noon"},
-	{"ATM machine", "ATM"},
-	{"PIN number", "PIN"},
-	{"LCD display", "LCD"},
 }
 
 // cliches are phrases that have been used so often they no longer carry the
