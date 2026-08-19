@@ -47,6 +47,22 @@ type GrammarRule struct {
 	// and proposes nothing -- correct when there is no single right fix.
 	Suggest string `json:"suggest"`
 
+	// Alternatives are further replacements, offered after Suggest and in
+	// this order. Empty for the rules with one answer, which is nearly all of
+	// them.
+	//
+	// Added for the questions with two right answers, which the check tier
+	// is full of. "Hi Sarah thanks for the notes" wants either "Hi Sarah,"
+	// or "Hi, Sarah," depending on how formal the writer is being, and a
+	// checker that picks one of those for the reader is wrong half the time
+	// while looking certain. The same is true of a bare "which", where the
+	// choice is a comma or a "that".
+	//
+	// Not a replacement for Suggest: the first answer is the one the rule
+	// leads with, and keeping it a field of its own means every rule that
+	// has one answer says so by having nothing here.
+	Alternatives []string `json:"alternatives,omitempty"`
+
 	// Category groups the rule for display: "Spacing", "Punctuation",
 	// "Capitalization", "Grammar", "Confused words", "Style".
 	Category string `json:"category,omitempty"`

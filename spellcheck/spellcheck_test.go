@@ -54,15 +54,24 @@ func TestRulesSuggestReferencesExist(t *testing.T) {
 	ref := regexp.MustCompile(`\$(\d+)`)
 	for i, r := range Rules {
 		groups := countGroups(r.Pattern)
-		for _, m := range ref.FindAllStringSubmatch(r.Suggest, -1) {
-			var n int
-			for _, c := range m[1] {
-				n = n*10 + int(c-'0')
+		// Every replacement the rule offers, not only the first: an
+		// alternative is spliced into the text exactly as Suggest is, and a
+		// dangling $3 in one shows the reader a literal "$3" just the same.
+		for _, template := range append([]string{r.Suggest}, r.Alternatives...) {
+			for _, m := range ref.FindAllStringSubmatch(template, -1) {
+				var n int
+				for _, c := range m[1] {
+					n = n*10 + int(c-'0')
+				}
+				if n > groups {
+					t.Errorf("Rules[%d] (%q): %q references $%d but Pattern has %d groups",
+						i, r.Message, template, n, groups)
+				}
 			}
-			if n > groups {
-				t.Errorf("Rules[%d] (%q): Suggest references $%d but Pattern has %d groups",
-					i, r.Message, n, groups)
-			}
+		}
+		if len(r.Alternatives) > 0 && r.Suggest == "" {
+			t.Errorf("Rules[%d] (%q): has alternatives but no first answer",
+				i, r.Message)
 		}
 	}
 }
@@ -911,6 +920,11 @@ func TestRuleFixesResolveTheRule(t *testing.T) {
 		if err != nil {
 			continue // Dart-only; covered app-side.
 		}
+		// Every answer the rule offers, not only the first. An alternative
+		// that leaves the rule still firing is the same embarrassment as a
+		// Suggest that does: the reader presses it, the mark stays, and the
+		// tools look broken.
+		answers := append([]string{r.Suggest}, r.Alternatives...)
 		var exceptions []*regexp.Regexp
 		for _, source := range r.Antipatterns {
 			if anti, err := regexp.Compile(source); err == nil {
@@ -923,24 +937,27 @@ func TestRuleFixesResolveTheRule(t *testing.T) {
 			if at == nil || suppressed(exceptions, text, at[:2]) {
 				continue // TestRuleExamples already reports this.
 			}
-			replacement := expandSuggestion(r.Suggest, text, at)
-			fixed := text[:at[0]] + replacement + text[at[1]:]
-			if fixed == text {
-				t.Errorf("Rules[%d] (%q): the fix for %q changes nothing",
-					i, r.Message, text)
-				continue
-			}
-			// Only what was replaced is the fix's business. An example is
-			// allowed to carry a second fault of the same kind -- "she
-			// speaks french and german" does -- and the rule firing again
-			// further along is it working, not failing.
-			from, to := at[0], at[0]+len(replacement)
-			for _, still := range re.FindAllStringIndex(fixed, -1) {
-				if still[0] < to && still[1] > from &&
-					!suppressed(exceptions, fixed, still) {
-					t.Errorf("Rules[%d] (%q): fixing %q gives %q, which the "+
-						"rule still fires on", i, r.Message, text, fixed)
-					break
+			for _, answer := range answers {
+				replacement := expandSuggestion(answer, text, at)
+				fixed := text[:at[0]] + replacement + text[at[1]:]
+				if fixed == text {
+					t.Errorf("Rules[%d] (%q): the fix %q for %q changes nothing",
+						i, r.Message, answer, text)
+					continue
+				}
+				// Only what was replaced is the fix's business. An example is
+				// allowed to carry a second fault of the same kind -- "she
+				// speaks french and german" does -- and the rule firing again
+				// further along is it working, not failing.
+				from, to := at[0], at[0]+len(replacement)
+				for _, still := range re.FindAllStringIndex(fixed, -1) {
+					if still[0] < to && still[1] > from &&
+						!suppressed(exceptions, fixed, still) {
+						t.Errorf("Rules[%d] (%q): fixing %q with %q gives %q, "+
+							"which the rule still fires on",
+							i, r.Message, text, answer, fixed)
+						break
+					}
 				}
 			}
 		}

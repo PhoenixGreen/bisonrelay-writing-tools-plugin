@@ -113,46 +113,95 @@ var commaCheckRules = []GrammarRule{
 			"I don't know which to pick",
 			"we weighed it before deciding which way to go",
 		},
-		Message:  "Comma before \"which\"?",
-		Suggest:  "$1, which",
-		Category: "Punctuation",
-		Severity: SeverityCheck,
+		Message: "Comma before \"which\"?",
+		// The two answers the distinction actually has. A clause that merely
+		// adds something takes the comma; a clause that says which thing you
+		// mean takes "that" and no comma. Offering only the comma would push
+		// every reader towards the reading they may not have meant.
+		Suggest:      "$1, which",
+		Alternatives: []string{"$1 that"},
+		Category:     "Punctuation",
+		Severity:     SeverityCheck,
 		Explanation: "A clause that adds something takes a comma before " +
 			"\"which\"; one that says which thing you mean is usually " +
 			"written with \"that\" and no comma. British writing often uses " +
 			"\"which\" for both.",
 	},
 	{
-		// A name being addressed is set off by a comma: "Thanks Ken" against
-		// "Thanks, Ken". Common enough in a chat client to be worth asking
-		// about, and impossible to settle -- the plugin has no way to know
-		// whether the capitalised word is a person or a thing.
+		// A name being addressed is set off by a comma, and where the comma
+		// goes depends on what follows the name.
+		//
+		// This is the case with more text after it -- "Hi Sarah thanks for
+		// the notes" -- and the comma belongs after the name, because the
+		// name ends the greeting and "thanks for the notes" is the next
+		// thing being said. Putting it after "Hi" alone is the fix that
+		// looks right and reads wrong: "Hi, Sarah thanks for the notes" says
+		// that Sarah is doing the thanking.
+		//
+		// Two answers, so both are offered. The second puts a comma in both
+		// places, which is what a formal letter does and what somebody
+		// writing to a colleague usually does not.
 		Pattern: `(^|[.!?]\s|\n)(Hi|Hey|Hello|Thanks|Thank you|Sorry|Welcome|` +
 			`Goodbye|Bye|Congratulations|Good morning|Good afternoon|` +
-			`Good evening)\s+([A-Z][a-z]{2,})\b`,
+			// The whole of the next word rather than its first letter: what
+			// is matched is what a correction replaces, and it is also the
+			// label on the button offering it. Matching one character
+			// produced a chip that read "Hi Sarah, t".
+			`Good evening)\s+([A-Z][a-z]{2,})\s+([a-z]+)`,
 		Antipatterns: []string{
 			// The set phrases where the capitalised word is not a person.
+			// Each runs on into the word that follows, because an exception
+			// suppresses only where it contains the match, and this match
+			// takes in the next word entire.
 			`(Hello\s+World|Thanks\s+(God|Goodness|Heaven|Heavens)|` +
 				`Sorry\s+(State|Sight|Excuse)|Welcome\s+(Pack|Page|Screen|` +
-				`Email|Message|Guide|Bonus)|Good\s+(Friday|Samaritan))`,
+				`Email|Message|Guide|Bonus)|Good\s+(Friday|Samaritan))\s+\w+`,
 		},
 		Flags: []string{
-			"Thanks Ken for the review",
+			"Hi Sarah thanks for the notes",
+			"we shipped it. Thanks Ken for the review",
+		},
+		Leaves: []string{
+			"Hi Sarah, thanks for the notes",
+			"Hi, Sarah, thanks for the notes",
+			"Hello World is the first program",
+			"Welcome Pack arrived today",
+		},
+		Message:      "Comma after the name?",
+		Suggest:      "$1$2 $3, $4",
+		Alternatives: []string{"$1$2, $3, $4"},
+		Category:     "Punctuation",
+		Severity:     SeverityCheck,
+		Explanation: "The name you are addressing is separated from what " +
+			"you go on to say. Without the comma the name reads as the " +
+			"subject of the next words -- \"Hi Sarah thanks for the notes\" " +
+			"says that Sarah is the one thanking somebody.",
+	},
+	{
+		// The same greeting with nothing after the name, where the only
+		// comma there is room for is the one before it.
+		Pattern: `(^|[.!?]\s|\n)(Hi|Hey|Hello|Thanks|Thank you|Sorry|Welcome|` +
+			`Goodbye|Bye|Congratulations|Good morning|Good afternoon|` +
+			`Good evening)\s+([A-Z][a-z]{2,})([.!?\n]|$)`,
+		Antipatterns: []string{
+			`(Hello\s+World|Thanks\s+(God|Goodness|Heaven|Heavens)|` +
+				`Welcome\s+(Pack|Page|Screen|Email|Message|Guide|Bonus))`,
+		},
+		Flags: []string{
 			"Hi Sarah",
 			"we shipped it. Thanks Ken",
 		},
 		Leaves: []string{
-			"Thanks, Ken for the review",
-			"Hello World is the first program",
-			"Welcome Pack arrived today",
+			"Hi, Sarah",
+			"Hello World",
 		},
-		Message:  "Comma before a name?",
-		Suggest:  "$1$2, $3",
+		Message:  "Comma before the name?",
+		Suggest:  "$1$2, $3$4",
 		Category: "Punctuation",
 		Severity: SeverityCheck,
-		Explanation: "A name you are speaking to is separated by a comma: " +
-			"\"Thanks, Ken\". Without it the name reads as part of what is " +
-			"being thanked, which is occasionally what was meant.",
+		Explanation: "A name you are speaking to is set off by a comma: " +
+			"\"Hi, Sarah\". On its own like this there is nowhere else for " +
+			"the comma to go.",
 	},
 	{
 		// An introductory clause takes a comma before the main one. Kept to a
