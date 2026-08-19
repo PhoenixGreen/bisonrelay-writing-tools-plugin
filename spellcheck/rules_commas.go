@@ -165,8 +165,11 @@ var commaCheckRules = []GrammarRule{
 			`(will|would|can|could|should|must|might|is|was|are|were|have|` +
 			`has|had|do|does|did|went|got|need|needs)\b`,
 		Antipatterns: []string{
-			// Already punctuated somewhere in the clause.
-			`(^|[.!?]\s|\n)\w+\s+[^,.!?\n]*,`,
+			// An inverted question opening with the same word: "Since when do
+			// we have to ask?" is not a clause waiting for a comma.
+			`(^|[.!?]\s|\n)([Ss]ince|[Ww]hen|[Uu]ntil)\s+` +
+				`(when|how|why|what|where)\s+(do|does|did|can|could|will|` +
+				`would|should|have|has)\s+(we|I|you|he|she|it|they)\s+\w+`,
 		},
 		Flags: []string{
 			"When the release shipped we went home",
@@ -175,6 +178,7 @@ var commaCheckRules = []GrammarRule{
 		Leaves: []string{
 			"When the release shipped, we went home",
 			"If it fails, we retry",
+			"Since when do we have to ask for that",
 		},
 		Message:  "Comma after the opening clause?",
 		Suggest:  "$1$2 $3, $4 $5",

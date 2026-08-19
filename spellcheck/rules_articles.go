@@ -65,6 +65,33 @@ var articleRules = []GrammarRule{
 		Explanation: explainArticle,
 	},
 	{
+		// The other half of the silent-h rule, and it was missing: the list
+		// above only ever suppressed "an", so "a hour" and "a honest answer"
+		// went unflagged while "an dog" was caught. Found by reading a test
+		// post out loud -- nothing about the rules themselves says one
+		// direction is written and the other is not.
+		Pattern: `\b([Aa])\s+(` + vowelSoundedConsonants + `)`,
+		Flags:   []string{"it was a hour before anybody replied", "a honest answer"},
+		Leaves:  []string{"an hour of honest work", "a house on the hill"},
+		Message: "Should be \"$1n $2\"",
+		Suggest: "$1n $2",
+		// A capital in the middle of a sentence is somebody's name or an
+		// initialism, and neither is a word this list is about.
+		Category:    "Grammar",
+		Explanation: explainArticle,
+	},
+	{
+		// "A MBA" for the same reason: the letter is a consonant and its
+		// name opens with a vowel.
+		Pattern:     `\b([Aa])\s+(` + initialisms + `)`,
+		Flags:       []string{"she has a MBA", "a X-ray booked"},
+		Leaves:      []string{"an MBA", "a BBC documentary", "a DVD"},
+		Message:     "Should be \"$1n $2\"",
+		Suggest:     "$1n $2",
+		Category:    "Grammar",
+		Explanation: explainArticle,
+	},
+	{
 		Pattern: `\b([Aa])n\s+([B-DF-HJ-NP-TV-Zb-df-hj-np-tv-z]\w*)`,
 		Flags:   []string{"that is an dog"},
 		Leaves:  []string{"an hour of honest work", "an heir to it", "she has an MBA", "an X-ray booked"},
