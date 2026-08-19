@@ -663,6 +663,16 @@ func TestAntipatternsAreReachable(t *testing.T) {
 // because the reader who had it right is now being corrected by a rule that
 // does not know. The question mark is the whole bargain, so it is checked
 // rather than trusted to review.
+// checkCategories are the headings a check may carry. "Possible confusion" is
+// the tier's own and belongs to nothing else; "Punctuation" is shared with the
+// mechanical comma rules on purpose, because a reader meets both in the same
+// place and the heading is what says so. The severity, not the category, is
+// what decides which page an issue is listed on.
+var checkCategories = map[string]bool{
+	"Possible confusion": true,
+	"Punctuation":        true,
+}
+
 func TestCheckRulesAskAQuestion(t *testing.T) {
 	for i, r := range Rules {
 		if r.Severity != SeverityCheck {
@@ -682,9 +692,9 @@ func TestCheckRulesAskAQuestion(t *testing.T) {
 			t.Errorf("Rules[%d] (%q): a check must offer the other reading",
 				i, r.Message)
 		}
-		if r.Category != "Possible confusion" {
-			t.Errorf("Rules[%d] (%q): a check belongs in \"Possible "+
-				"confusion\", not %q", i, r.Message, r.Category)
+		if !checkCategories[r.Category] {
+			t.Errorf("Rules[%d] (%q): a check belongs in one of %v, not %q",
+				i, r.Message, checkCategories, r.Category)
 		}
 		// A rule matching one bare word fires on every use of it, and the
 		// tier is only tolerable while it fires on positions.

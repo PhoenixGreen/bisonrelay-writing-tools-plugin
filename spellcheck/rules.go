@@ -39,4 +39,5 @@ var Rules = concat(
 	inclusiveRules,
 	typographyRules,
 	checkRules,
+	commaCheckRules,
 )
